@@ -1,0 +1,6 @@
+   flet==0.24.1
+   fpdf2==2.7.9
+   matplotlib==3.8.4
+   sqlalchemy==2.0.25
+   psycopg2-binary==2.9.9
+   gunicorn==21.2.0
