@@ -65,7 +65,22 @@ def crear_tablas_taller():
     cursor.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)", ("admin", "1234"))
     conn.commit()
     conn.close()
+def insertar_cliente(nombre, telefono, direccion):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO clientes (nombre, telefono, direccion) VALUES (?,?,?)",
+                   (nombre, telefono, direccion))
+    conn.commit()
+    conn.close()
 
+def cargar_clientes():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, nombre, telefono, direccion FROM clientes ORDER BY id DESC")
+    datos = cursor.fetchall()
+    conn.close()
+    return datos
+    
 def verificar_usuario(usuario, password):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -134,13 +149,75 @@ def mostrar_app(page):
         ft.Column([
             ft.Text("Control Taller", size=35, weight="bold"),
             ft.Text("¿Qué hacemos hoy?", size=16, color="grey"),
-            ft.ElevatedButton("🚗 Clientes", width=300, on_click=lambda e: print("Abrir Clientes")),
+            ft.ElevatedButton("🚗 Clientes", width=300, on_click=lambda e: mostrar_clientes(page)),
             ft.ElevatedButton("🔧 Vehículos", width=300, on_click=lambda e: print("Abrir Vehículos")), 
             ft.ElevatedButton("📋 Órdenes de Trabajo", width=300, on_click=lambda e: print("Abrir Órdenes")),
             ft.ElevatedButton("🚪 Cerrar sesión", width=300, color="red", on_click=cerrar_sesion)
         ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)
     )
+def mostrar_clientes(page):
+    # Inputs del formulario
+    nombre_input = ft.TextField(label="Nombre", width=300)
+    tel_input = ft.TextField(label="Teléfono", width=200)
+    dir_input = ft.TextField(label="Dirección", width=400)
 
+    # Tabla
+    tabla = ft.DataTable(
+        columns=[
+            ft.DataColumn(ft.Text("ID")),
+            ft.DataColumn(ft.Text("Nombre")),
+            ft.DataColumn(ft.Text("Teléfono")),
+            ft.DataColumn(ft.Text("Dirección")),
+        ],
+        rows=[]
+    )
+
+    def guardar_cliente(e):
+        if nombre_input.value == "" or tel_input.value == "":
+            page.snack_bar = ft.SnackBar(ft.Text("Nombre y Teléfono son obligatorios"))
+            page.snack_bar.open = True
+        else:
+            insertar_cliente(nombre_input.value, tel_input.value, dir_input.value)
+            nombre_input.value = ""
+            tel_input.value = ""
+            dir_input.value = ""
+            cargar_tabla()
+            page.snack_bar = ft.SnackBar(ft.Text("Cliente guardado"))
+            page.snack_bar.open = True
+        page.update()
+
+    def cargar_tabla():
+        tabla.rows.clear()
+        clientes = cargar_clientes()
+        for c in clientes:
+            tabla.rows.append(
+                ft.DataRow(cells=[
+                    ft.DataCell(ft.Text(str(c[0]))),
+                    ft.DataCell(ft.Text(c[1])),
+                    ft.DataCell(ft.Text(c[2])),
+                    ft.DataCell(ft.Text(c[3])),
+                ])
+            )
+        page.update()
+
+    # Botón guardar
+    btn_guardar = ft.ElevatedButton("Guardar", on_click=guardar_cliente)
+
+    page.clean()
+    page.add(
+        ft.Column([
+            ft.Text("Gestión de Clientes", size=30, weight="bold"),
+            nombre_input,
+            tel_input,
+            dir_input,
+            btn_guardar,
+            ft.Divider(),
+            ft.Text("Clientes registrados", size=20),
+            tabla,
+            ft.ElevatedButton("⬅ Volver al menú", on_click=lambda e: mostrar_app(page))
+        ], scroll=ft.ScrollMode.AUTO)
+    )
+    cargar_tabla()
 def main(page: ft.Page):
     page.title = "Control Taller"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
