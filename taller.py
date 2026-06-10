@@ -15,7 +15,7 @@ def conectar_db():
         )
     ''')
 
-ddef crear_tablas_taller():
+def crear_tablas_taller():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     
