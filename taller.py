@@ -14,7 +14,6 @@ def conectar_db():
             password TEXT NOT NULL
         )
     ''')
-    # Usuario admin por defecto
     cursor.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)", ("admin", "1234"))
     conn.commit()
     conn.close()
@@ -45,9 +44,6 @@ def mostrar_login(page):
 
     def iniciar_sesion(e):
         if verificar_usuario(usuario_input.value, password_input.value):
-            mensaje.value = "✅ Login correcto"
-            mensaje.color = "green"
-            page.update()
             mostrar_app(page)
         else:
             mensaje.value = "❌ Usuario o contraseña incorrectos"
@@ -74,8 +70,8 @@ def mostrar_login(page):
             usuario_input,
             password_input,
             ft.Row([
-                ft.ElevatedButton("Entrar", on_click=iniciar_sesion),
-                ft.ElevatedButton("Registrar", on_click=registrar)
+                ft.ElevatedButton("Entrar", on_click=iniciar_sesion, width=145),
+                ft.ElevatedButton("Registrar", on_click=registrar, width=145)
             ], alignment=ft.MainAxisAlignment.CENTER),
             mensaje
         ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)
@@ -99,12 +95,11 @@ def mostrar_app(page):
 
 def main(page: ft.Page):
     page.title = "Control Taller"
-    page.window_width = 400
-    page.window_height = 600
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.bgcolor = "#1a1a1a"
     
     conectar_db()
     mostrar_login(page)
 
-ft.app(target=main)
+ft.app(target=main, port=int(os.getenv("PORT", 8080)), host="0.0.0.0", view=None)
