@@ -14,6 +14,45 @@ def conectar_db():
             password TEXT NOT NULL
         )
     ''')
+    def crear_tablas_taller():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS clientes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            telefono TEXT,
+            direccion TEXT
+        )
+    ''')
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS vehiculos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            placa TEXT UNIQUE NOT NULL,
+            marca TEXT,
+            modelo TEXT,
+            año INTEGER,
+            cliente_id INTEGER,
+            FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+        )
+    ''')
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ordenes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha TEXT,
+            vehiculo_id INTEGER,
+            trabajo TEXT,
+            costo REAL,
+            estado TEXT DEFAULT 'Pendiente',
+            FOREIGN KEY (vehiculo_id) REFERENCES vehiculos(id)
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
     cursor.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)", ("admin", "1234"))
     conn.commit()
     conn.close()
@@ -99,7 +138,7 @@ def main(page: ft.Page):
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.bgcolor = "#1a1a1a"
     
-    conectar_db()
+    crear_tablas_taller()
     mostrar_login(page)
 
 ft.app(target=main, port=int(os.getenv("PORT", 8080)), host="0.0.0.0", view=None)
