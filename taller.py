@@ -18,7 +18,8 @@ def conectar_db():
 def crear_tablas_taller():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    
+
+    # Tabla usuarios - déjala, es para el login
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,39 +27,30 @@ def crear_tablas_taller():
             password TEXT NOT NULL
         )
     ''')
-    
-    cursor.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)", ("admin", "1234"))
-    
+
+    # Tabla mecánicos - NUEVA
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS clientes (
+        CREATE TABLE IF NOT EXISTS mecanicos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT NOT NULL,
-            telefono TEXT,
-            direccion TEXT
+            telefono TEXT
         )
     ''')
-    
+
+    # Tabla trabajos - NUEVA 
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS vehiculos (
+        CREATE TABLE IF NOT EXISTS trabajos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            placa TEXT UNIQUE NOT NULL,
-            marca TEXT,
-            modelo TEXT,
-            año INTEGER,
-            cliente_id INTEGER,
-            FOREIGN KEY (cliente_id) REFERENCES clientes(id)
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ordenes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            fecha TEXT,
-            vehiculo_id INTEGER,
-            trabajo TEXT,
-            costo REAL,
+            fecha DATE DEFAULT CURRENT_DATE,
+            mecanico_id INTEGER,
+            cliente TEXT,
+            vehiculo TEXT,
+            descripcion TEXT,
+            costo_mano_obra REAL,
+            costo_repuestos REAL,
+            total REAL,
             estado TEXT DEFAULT 'Pendiente',
-            FOREIGN KEY (vehiculo_id) REFERENCES vehiculos(id)
+            FOREIGN KEY (mecanico_id) REFERENCES mecanicos(id)
         )
     ''')
     
