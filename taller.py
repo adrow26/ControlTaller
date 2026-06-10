@@ -62,8 +62,6 @@ def crear_tablas_taller():
         )
     ''')
     
-    conn.commit()
-    conn.close()
     cursor.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)", ("admin", "1234"))
     conn.commit()
     conn.close()
