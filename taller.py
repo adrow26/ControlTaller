@@ -15,7 +15,7 @@ def conectar_db():
         )
     ''')
 
-def crear_tablas_taller():
+ddef crear_tablas_taller():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     
@@ -51,7 +51,7 @@ def crear_tablas_taller():
             FOREIGN KEY (vehiculo_id) REFERENCES vehiculos(id)
         )
     ''')
-    
+         
     conn.commit()
     conn.close()
     cursor.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)", ("admin", "1234"))
