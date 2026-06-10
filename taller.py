@@ -6,4 +6,5 @@ def main(page: ft.Page):
     page.add(ft.Text("App Taller lista ✅", size=30))
 
 if __name__ == "__main__":
-    ft.app(target=main, port=8080, host="0.0.0.0")
+    port = int(os.environ.get("PORT", 8080))
+    ft.app(target=main, port=port, host="0.0.0.0")
