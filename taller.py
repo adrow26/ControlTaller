@@ -1,56 +1,110 @@
 import flet as ft
-import os
 import sqlite3
+import os
 
 DB_NAME = "taller.db"
 
-def init_db():
+def conectar_db():
     conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS usuarios
-                 (id INTEGER PRIMARY KEY, usuario TEXT UNIQUE, password TEXT)''')
-    # Usuario por defecto si no existe
-    c.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)", ("admin", "1234"))
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        )
+    ''')
+    # Usuario admin por defecto
+    cursor.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)", ("admin", "1234"))
     conn.commit()
     conn.close()
 
-def verificar_login(usuario, password):
+def verificar_usuario(usuario, password):
     conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("SELECT * FROM usuarios WHERE usuario=? AND password=?", (usuario, password))
-    user = c.fetchone()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM usuarios WHERE usuario=? AND password=?", (usuario, password))
+    resultado = cursor.fetchone()
     conn.close()
-    return user is not None
+    return resultado is not None
 
-def main(page: ft.Page):
-    init_db()  # Crea la BD al iniciar
-    
-    page.title = "Login - Control Taller"
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.bgcolor = "#1a1a1a"
+def crear_usuario(usuario, password):
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO usuarios (usuario, password) VALUES (?, ?)", (usuario, password))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.IntegrityError:
+        return False
 
-    def login_click(e):
-        if verificar_login(user_field.value, pass_field.value):
-            page.clean()
-            page.add(ft.Text("App Taller lista ✅", size=30))
+def mostrar_login(page):
+    usuario_input = ft.TextField(label="Usuario", width=300)
+    password_input = ft.TextField(label="Contraseña", password=True, width=300)
+    mensaje = ft.Text("", color="red")
+
+    def iniciar_sesion(e):
+        if verificar_usuario(usuario_input.value, password_input.value):
+            mensaje.value = "✅ Login correcto"
+            mensaje.color = "green"
+            page.update()
+            mostrar_app(page)
         else:
-            error_text.value = "Usuario o contraseña incorrectos"
+            mensaje.value = "❌ Usuario o contraseña incorrectos"
+            mensaje.color = "red"
+            page.update()
+
+    def registrar(e):
+        if usuario_input.value == "" or password_input.value == "":
+            mensaje.value = "⚠️ Completa usuario y contraseña"
+            mensaje.color = "orange"
+        elif crear_usuario(usuario_input.value, password_input.value):
+            mensaje.value = "✅ Usuario creado. Ya puedes iniciar sesión"
+            mensaje.color = "green"
+        else:
+            mensaje.value = "❌ Ese usuario ya existe"
+            mensaje.color = "red"
         page.update()
 
-    user_field = ft.TextField(label="Usuario", width=300)
-    pass_field = ft.TextField(label="Contraseña", password=True, width=300)
-    error_text = ft.Text(color="red")
-    login_btn = ft.ElevatedButton("Entrar", on_click=login_click, width=300)
-
+    page.clean()
     page.add(
         ft.Column([
             ft.Text("Control Taller", size=40, weight="bold"),
-            user_field,
-            pass_field,
-            login_btn,
-            error_text
-        ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+            ft.Text("Inicia sesión", size=20),
+            usuario_input,
+            password_input,
+            ft.Row([
+                ft.ElevatedButton("Entrar", on_click=iniciar_sesion),
+                ft.ElevatedButton("Registrar", on_click=registrar)
+            ], alignment=ft.MainAxisAlignment.CENTER),
+            mensaje
+        ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)
     )
 
-ft.app(target=main, port=int(os.getenv("PORT", 8080)), host="0.0.0.0", view=None)
+def mostrar_app(page):
+    def cerrar_sesion(e):
+        mostrar_login(page)
+
+    page.clean()
+    page.add(
+        ft.Column([
+            ft.Text("Control Taller", size=35, weight="bold"),
+            ft.Text("¿Qué hacemos hoy?", size=16, color="grey"),
+            ft.ElevatedButton("🚗 Clientes", width=300, on_click=lambda e: print("Abrir Clientes")),
+            ft.ElevatedButton("🔧 Vehículos", width=300, on_click=lambda e: print("Abrir Vehículos")), 
+            ft.ElevatedButton("📋 Órdenes de Trabajo", width=300, on_click=lambda e: print("Abrir Órdenes")),
+            ft.ElevatedButton("🚪 Cerrar sesión", width=300, color="red", on_click=cerrar_sesion)
+        ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)
+    )
+
+def main(page: ft.Page):
+    page.title = "Control Taller"
+    page.window_width = 400
+    page.window_height = 600
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    
+    conectar_db()
+    mostrar_login(page)
+
+ft.app(target=main)
