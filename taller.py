@@ -1,24 +1,42 @@
 import flet as ft
 import os
+import sqlite3
+
+DB_NAME = "taller.db"
+
+def init_db():
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS usuarios
+                 (id INTEGER PRIMARY KEY, usuario TEXT UNIQUE, password TEXT)''')
+    # Usuario por defecto si no existe
+    c.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)", ("admin", "1234"))
+    conn.commit()
+    conn.close()
+
+def verificar_login(usuario, password):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("SELECT * FROM usuarios WHERE usuario=? AND password=?", (usuario, password))
+    user = c.fetchone()
+    conn.close()
+    return user is not None
 
 def main(page: ft.Page):
+    init_db()  # Crea la BD al iniciar
+    
     page.title = "Login - Control Taller"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.bgcolor = "#1a1a1a"
 
     def login_click(e):
-        usuario = user_field.value
-        password = pass_field.value
-        
-        # Aquí pones tu validación real después
-        if usuario == "admin" and password == "1234":
+        if verificar_login(user_field.value, pass_field.value):
             page.clean()
             page.add(ft.Text("App Taller lista ✅", size=30))
-            page.update()
         else:
             error_text.value = "Usuario o contraseña incorrectos"
-            page.update()
+        page.update()
 
     user_field = ft.TextField(label="Usuario", width=300)
     pass_field = ft.TextField(label="Contraseña", password=True, width=300)
