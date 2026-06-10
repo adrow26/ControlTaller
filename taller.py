@@ -7,6 +7,7 @@ async def main(page: ft.Page):
 
 app = ft.app_async(
     target=main,
-    port=int(os.environ["PORT"]),
-    host="0.0.0.0"
+    port=int(os.getenv("PORT", 8080)),
+    host="0.0.0.0",
+    return_app=True  # <- esta línea es la clave
 )
