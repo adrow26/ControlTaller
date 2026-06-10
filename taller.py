@@ -19,7 +19,6 @@ def crear_tablas_taller():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     
-    # Tabla usuarios - la que te faltaba
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,10 +27,8 @@ def crear_tablas_taller():
         )
     ''')
     
-    # Usuario admin por defecto
     cursor.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)", ("admin", "1234"))
     
-    # Tabla clientes
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS clientes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,7 +38,6 @@ def crear_tablas_taller():
         )
     ''')
     
-    # Tabla vehiculos
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS vehiculos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,7 +50,6 @@ def crear_tablas_taller():
         )
     ''')
     
-    # Tabla ordenes
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS ordenes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +63,7 @@ def crear_tablas_taller():
     ''')
     
     conn.commit()
-    conn.close()  # <- El close va hasta el final de todo
+    conn.close()
     cursor.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)", ("admin", "1234"))
     conn.commit()
     conn.close()
