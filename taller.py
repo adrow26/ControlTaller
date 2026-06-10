@@ -4,4 +4,4 @@ def main(page: ft.Page):
     page.title = "Control Taller"
     page.add(ft.Text("App Taller lista ✅", size=30))
 
-ft.app(target=main, view=ft.WEB_BROWSER, port=8080, host="0.0.0.0")
+ft.app(target=main, port=8080, host="0.0.0.0")
