@@ -214,11 +214,11 @@ def mostrar_mecanicos(page):
 
 def mostrar_trabajos(page):
     mecanicos = obtener_mecanicos()
-if not mecanicos:
-    page.clean()
-    page.add(ft.Text("Primero registra al menos 1 mecánico"), ft.ElevatedButton("Volver", on_click=lambda e: mostrar_app(page)))
-    page.update()
-return
+    if not mecanicos:
+        page.clean()
+        page.add(ft.Text("Primero registra al menos 1 mecánico"), ft.ElevatedButton("Volver", on_click=lambda e: mostrar_app(page)))
+        page.update()
+        return
     
     desc_input = ft.TextField(label="Descripción del trabajo", width=300)
     mecanico_dropdown = ft.Dropdown(
