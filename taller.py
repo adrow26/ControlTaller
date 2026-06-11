@@ -165,7 +165,7 @@ def mostrar_app(page):
             ft.Text("Control Taller", size=35, weight="bold"),
             ft.Text("¿Qué hacemos hoy?", size=16, color="grey"),
             ft.ElevatedButton("Órdenes de Trabajo", width=300, on_click=lambda e: mostrar_trabajos(page)),
-            ft.ElevatedButton("Vehículos", width=300, on_click=lambda e: page.show_snack_bar(ft.SnackBar(ft.Text("Módulo en construcción")))),
+            ft.ElevatedButton("Vehículos", width=300, on_click=lambda e: mostrar_aviso(page, "Módulo en construcción 🚧")),
             ft.ElevatedButton("Cerrar sesión", icon=ft.icons.LOGOUT, color="red", width=300, on_click=lambda e: cerrar_sesion(page)),
         ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)
     )
@@ -265,6 +265,9 @@ if not mecanicos:
         ], scroll=ft.ScrollMode.AUTO)
     )
     page.update() 
+def mostrar_aviso(page, mensaje):
+    page.snack_bar = ft.SnackBar(ft.Text(mensaje), open=True)
+    page.update()
     
 def main(page: ft.Page):
     page.title = "Control Taller"
