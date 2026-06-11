@@ -176,7 +176,7 @@ def mostrar_mecanicos(page):
 	telefono_input = ft.TextField(label="Teléfono", width=300)
 	especialidad_input = ft.TextField(label="Especialidad", width=300)
 
-		def guardar_mecanico(e):
+	def guardar_mecanico(e):
 		if not nombre_input.value:
 		mostrar_aviso(page, "El nombre es obligatorio")
 		return
