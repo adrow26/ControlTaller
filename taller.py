@@ -226,60 +226,7 @@ def mostrar_trabajos(page):
             ft.ElevatedButton("← Volver al menú", on_click=lambda e: mostrar_app(page))
         ], scroll=ft.ScrollMode.AUTO)
     )
-    page.update()
-    # Tabla
-    tabla = ft.DataTable(
-        columns=[
-            ft.DataColumn(ft.Text("ID")),
-            ft.DataColumn(ft.Text("Nombre")),
-            ft.DataColumn(ft.Text("Teléfono")),
-            ft.DataColumn(ft.Text("Dirección")),
-        ],
-        rows=[]
-    )
-
-    def guardar_cliente(e):
-        if nombre_input.value == "" or tel_input.value == "":
-            page.snack_bar = ft.SnackBar(ft.Text("Nombre y Teléfono son obligatorios"))
-            page.snack_bar.open = True
-        else:
-            insertar_cliente(nombre_input.value, tel_input.value, dir_input.value)
-            nombre_input.value = ""
-            tel_input.value = ""
-            dir_input.value = ""
-            cargar_tabla()
-            page.snack_bar = ft.SnackBar(ft.Text("Cliente guardado"))
-            page.snack_bar.open = True
-        page.update()
-
-    def cargar_tabla():
-        tabla.rows.clear()
-        clientes = cargar_clientes()
-        for c in clientes:
-            tabla.rows.append(
-                ft.DataRow(cells=[
-                    ft.DataCell(ft.Text(str(c[0]))),
-                    ft.DataCell(ft.Text(c[1])),
-                    ft.DataCell(ft.Text(c[2])),
-                    ft.DataCell(ft.Text(c[3])),
-                ])
-            )
-        page.update()
-
-    # Botón guardar
-    btn_guardar = ft.ElevatedButton("Guardar", on_click=guardar_cliente)
-
-    page.clean()
-    page.add(
-        ft.Column([
-        ft.Text("Taller Mecánico", size=30, weight="bold"),
-        ft.Divider(),
-        ft.ElevatedButton("Mecánicos", on_click=lambda e: mostrar_mecanicos(page), width=300),
-        ft.ElevatedButton("Trabajos", on_click=lambda e: mostrar_trabajos(page), width=300),
-        ft.ElevatedButton("Cerrar sesión", on_click=lambda e: page.go("/login")),
-    ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
-    )
-    cargar_tabla()
+    page.update() 
     
 def main(page: ft.Page):
     page.title = "Control Taller"
