@@ -172,36 +172,35 @@ def mostrar_app(page):
     )
 
 def mostrar_mecanicos(page):
-    nombre_input = ft.TextField(label="Nombre del mecánico", width=300)
-    telefono_input = ft.TextField(label="Teléfono", width=300)
-    especialidad_input = ft.TextField(label="Especialidad", width=300)
+	nombre_input = ft.TextField(label="Nombre del mecánico", width=300)
+	telefono_input = ft.TextField(label="Teléfono", width=300)
+	especialidad_input = ft.TextField(label="Especialidad", width=300)
 
-def guardar_mecanico(e): # 👈 NUEVA FUNCIÓN
-     if not nombre_input.value:
-         page.clean()
-         page.add(ft.Text("El nombre es obligatorio"), ft.ElevatedButton("Volver", on_click=lambda e: mostrar_mecanicos(page)))
-         page.update()
-         return
-         
-     insertar_mecanico(nombre_input.value, telefono_input.value, especialidad_input.value)
-     nombre_input.value = ""
-     telefono_input.value = ""
-     especialidad_input.value = ""
-     page.update()
-     mostrar_mecanicos(page)
- 
-    page.clean()
-    page.add(
-        ft.Column([
-        ft.Text("Registrar Mecánico", size=25, weight="bold"),
-        nombre_input,
-        telefono_input,
-        especialidad_input,
-        ft.ElevatedButton("Guardar", icon=ft.icons.SAVE, on_click=guardar_mecanico), # 👈 EL BOTÓN
-        ft.ElevatedButton("Volver", on_click=lambda e: mostrar_app(page)),
-        cargar_tabla()
-     ], spacing=10, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
- )
+	def guardar_mecanico(e):
+		if not nombre_input.value:
+			mostrar_aviso(page, "El nombre es obligatorio")
+			return
+		
+		insertar_mecanico(nombre_input.value, telefono_input.value, especialidad_input.value)
+		mostrar_aviso(page, f"Mecánico {nombre_input.value} guardado ✅")
+		nombre_input.value = ""
+	telefono_input.value = ""
+	especialidad_input.value = ""
+		page.update()
+		mostrar_mecanicos(page)
+
+	page.clean()
+	page.add(
+		ft.Column([
+			ft.Text("Registrar Mecánico", size=25, weight="bold"),
+			nombre_input,
+			telefono_input,
+			especialidad_input,
+			ft.ElevatedButton("Guardar", icon=ft.icons.SAVE, on_click=guardar_mecanico),
+			ft.ElevatedButton("Volver", on_click=lambda e: mostrar_app(page)),
+			cargar_tabla()
+	], spacing=10, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+	)
     
     def cargar_tabla():
         mecanicos = obtener_mecanicos()
