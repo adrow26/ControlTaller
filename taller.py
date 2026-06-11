@@ -178,8 +178,8 @@ def mostrar_mecanicos(page):
 
 	def guardar_mecanico(e):
 		if not nombre_input.value:
-		mostrar_aviso(page, "El nombre es obligatorio")
-		return
+			mostrar_aviso(page, "El nombre es obligatorio")
+			return
 		
 		insertar_mecanico(nombre_input.value, telefono_input.value, especialidad_input.value)
 		mostrar_aviso(page, f"Mecánico {nombre_input.value} guardado ✅")
