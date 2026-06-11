@@ -133,12 +133,100 @@ def mostrar_app(page):
         ft.Column([
             ft.Text("Control Taller", size=35, weight="bold"),
             ft.Text("¿Qué hacemos hoy?", size=16, color="grey"),
-            ft.ElevatedButton("📋 Órdenes de Trabajo", width=300, on_click=lambda e: print("Abrir Órdenes")),
-            ft.ElevatedButton("🔧 Vehículos", width=300, on_click=lambda e: print("Abrir Vehículos")), 
+            ft.ElevatedButton("Órdenes de Trabajo", width=300, on_click=lambda e: mostrar_trabajos(page)),
+            ft.ElevatedButton("Vehículos", width=300, on_click=lambda e: mostrar_mecanicos(page)),
             ft.ElevatedButton("🚪 Cerrar sesión", width=300, color="red", on_click=cerrar_sesion)
         ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)
     )
 
+def mostrar_mecanicos(page):
+    nombre_input = ft.TextField(label="Nombre del mecánico", width=300)
+    telefono_input = ft.TextField(label="Teléfono", width=300)
+
+    def cargar_tabla():
+        mecanicos = obtener_mecanicos()
+        rows = [ft.DataRow(cells=[
+            ft.DataCell(ft.Text(str(m[0]))),
+            ft.DataCell(ft.Text(m[1])),
+            ft.DataCell(ft.Text(m[2] or ""))
+        ]) for m in mecanicos]
+        return ft.DataTable(columns=[
+            ft.DataColumn(ft.Text("ID")),
+            ft.DataColumn(ft.Text("Nombre")),
+            ft.DataColumn(ft.Text("Teléfono"))
+        ], rows=rows)
+
+    tabla = cargar_tabla()
+
+    def agregar_mecanico(e):
+        if nombre_input.value:
+            insertar_mecanico(nombre_input.value, telefono_input.value)
+            nombre_input.value = ""
+            telefono_input.value = ""
+            tabla.rows = cargar_tabla().rows
+            page.update()
+
+    page.clean()
+    page.add(
+        ft.Column([
+            ft.Text("Gestión de Mecánicos", size=24, weight="bold"),
+            nombre_input,
+            telefono_input,
+            ft.ElevatedButton("Guardar Mecánico", on_click=agregar_mecanico),
+            ft.Divider(),
+            ft.Text("Mecánicos registrados", size=20),
+            tabla,
+            ft.ElevatedButton("← Volver al menú", on_click=lambda e: mostrar_app(page))
+        ], scroll=ft.ScrollMode.AUTO)
+    )
+    page.update()
+
+def mostrar_trabajos(page):
+    desc_input = ft.TextField(label="Descripción del trabajo", width=300)
+    mecanico_dropdown = ft.Dropdown(
+        label="Mecánico",
+        options=[ft.dropdown.Option(str(m[0]), m[1]) for m in obtener_mecanicos()],
+        width=300
+    )
+
+    def cargar_tabla_trabajos():
+        trabajos = obtener_trabajos()
+        rows = [ft.DataRow(cells=[
+            ft.DataCell(ft.Text(str(t[0]))),
+            ft.DataCell(ft.Text(t[1])),
+            ft.DataCell(ft.Text(t[2] or "Sin asignar"))
+        ]) for t in trabajos]
+        return ft.DataTable(columns=[
+            ft.DataColumn(ft.Text("ID")),
+            ft.DataColumn(ft.Text("Descripción")),
+            ft.DataColumn(ft.Text("Mecánico"))
+        ], rows=rows)
+
+    tabla_trabajos = cargar_tabla_trabajos()
+
+    def agregar_trabajo(e):
+        if desc_input.value and mecanico_dropdown.value:
+            insertar_trabajo(desc_input.value, int(mecanico_dropdown.value))
+            desc_input.value = ""
+            mecanico_dropdown.value = None
+            mecanico_dropdown.options = [ft.dropdown.Option(str(m[0]), m[1]) for m in obtener_mecanicos()]
+            tabla_trabajos.rows = cargar_tabla_trabajos().rows
+            page.update()
+
+    page.clean()
+    page.add(
+        ft.Column([
+            ft.Text("Gestión de Trabajos", size=24, weight="bold"),
+            desc_input,
+            mecanico_dropdown,
+            ft.ElevatedButton("Guardar Trabajo", on_click=agregar_trabajo),
+            ft.Divider(),
+            ft.Text("Trabajos registrados", size=20),
+            tabla_trabajos,
+            ft.ElevatedButton("← Volver al menú", on_click=lambda e: mostrar_app(page))
+        ], scroll=ft.ScrollMode.AUTO)
+    )
+    page.update()
     # Tabla
     tabla = ft.DataTable(
         columns=[
