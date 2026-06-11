@@ -344,7 +344,7 @@ def mostrar_trabajos(page):
         options=[ft.dropdown.Option(str(m[0]), m[1]) for m in mecanicos],
         width=300
     )
-    orden_input = ft.TextField(label="Detalle de Trabajo", width=300)
+    orden_input = ft.TextField(label="Orden de Trabajo N°", width=300)
     repuestos_input = ft.TextField(label="Repuestos cambiados", width=300, multiline=True, min_lines=2)
     costo_rep_input = ft.TextField(label="Costo del repuesto Bs", width=145, keyboard_type=ft.KeyboardType.NUMBER)
     costo_trab_input = ft.TextField(label="Costo del trabajo Bs", width=145, keyboard_type=ft.KeyboardType.NUMBER)
