@@ -164,6 +164,7 @@ def mostrar_app(page):
         ft.Column([
             ft.Text("Control Taller", size=35, weight="bold"),
             ft.Text("¿Qué hacemos hoy?", size=16, color="grey"),
+            ft.ElevatedButton("Mecánicos", width=300, icon=ft.icons.BUILD, on_click=lambda e: mostrar_mecanicos(page)),
             ft.ElevatedButton("Órdenes de Trabajo", width=300, on_click=lambda e: mostrar_trabajos(page)),
             ft.ElevatedButton("Vehículos", width=300, on_click=lambda e: mostrar_aviso(page, "Módulo en construcción 🚧")),
             ft.ElevatedButton("Cerrar sesión", icon=ft.icons.LOGOUT, color="red", width=300, on_click=lambda e: cerrar_sesion(page)),
