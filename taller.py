@@ -184,18 +184,15 @@ def mostrar_app(page):
     page.clean()
     page.add(
         ft.Column([
-            ft.Text("Gestión de Clientes", size=30, weight="bold"),
-            nombre_input,
-            tel_input,
-            dir_input,
-            btn_guardar,
-            ft.Divider(),
-            ft.Text("Clientes registrados", size=20),
-            tabla,
-            ft.ElevatedButton("⬅ Volver al menú", on_click=lambda e: mostrar_app(page))
-        ], scroll=ft.ScrollMode.AUTO)
+        ft.Text("Taller Mecánico", size=30, weight="bold"),
+        ft.Divider(),
+        ft.ElevatedButton("Mecánicos", on_click=lambda e: mostrar_mecanicos(page), width=300),
+        ft.ElevatedButton("Trabajos", on_click=lambda e: mostrar_trabajos(page), width=300),
+        ft.ElevatedButton("Cerrar sesión", on_click=lambda e: page.go("/login")),
+    ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
     )
     cargar_tabla()
+    
 def main(page: ft.Page):
     page.title = "Control Taller"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
