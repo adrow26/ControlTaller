@@ -57,6 +57,37 @@ def crear_tablas_taller():
     cursor.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)", ("admin", "1234"))
     conn.commit()
     conn.close()
+
+def insertar_mecanico(nombre, telefono):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO mecanicos (nombre, telefono) VALUES (?,?)", (nombre, telefono))
+    conn.commit()
+    conn.close()
+
+def obtener_mecanicos():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, nombre FROM mecanicos ORDER BY nombre")
+    resultado = cursor.fetchall()
+    conn.close()
+    return resultado
+
+def insertar_trabajo(descripcion, mecanico_id):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO trabajos (descripcion, mecanico_id) VALUES (?,?)", (descripcion, mecanico_id))
+    conn.commit()
+    conn.close()
+
+def obtener_trabajos():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT t.id, t.descripcion, m.nombre FROM trabajos t LEFT JOIN mecanicos m ON t.mecanico_id = m.id ORDER BY t.id DESC")
+    resultado = cursor.fetchall()
+    conn.close()
+    return resultado
+    
 def insertar_cliente(nombre, telefono, direccion):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -182,6 +213,13 @@ def mostrar_mecanicos(page):
     page.update()
 
 def mostrar_trabajos(page):
+    mecanicos = obtener_mecanicos()
+if not mecanicos:
+    page.clean()
+    page.add(ft.Text("Primero registra al menos 1 mecánico"), ft.ElevatedButton("Volver", on_click=lambda e: mostrar_app(page)))
+    page.update()
+    return
+    
     desc_input = ft.TextField(label="Descripción del trabajo", width=300)
     mecanico_dropdown = ft.Dropdown(
         label="Mecánico",
