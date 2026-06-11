@@ -176,22 +176,22 @@ def mostrar_mecanicos(page):
 	telefono_input = ft.TextField(label="Teléfono", width=300)
 	especialidad_input = ft.TextField(label="Especialidad", width=300)
 
-	def guardar_mecanico(e):
+		def guardar_mecanico(e):
 		if not nombre_input.value:
-			mostrar_aviso(page, "El nombre es obligatorio")
-			return
+		mostrar_aviso(page, "El nombre es obligatorio")
+		return
 		
 		insertar_mecanico(nombre_input.value, telefono_input.value, especialidad_input.value)
 		mostrar_aviso(page, f"Mecánico {nombre_input.value} guardado ✅")
 		nombre_input.value = ""
-	telefono_input.value = ""
-	especialidad_input.value = ""
+		telefono_input.value = ""
+		especialidad_input.value = ""
 		page.update()
 		mostrar_mecanicos(page)
 
 	page.clean()
 	page.add(
-		ft.Column([
+	ft.Column([
 			ft.Text("Registrar Mecánico", size=25, weight="bold"),
 			nombre_input,
 			telefono_input,
