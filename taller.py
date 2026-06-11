@@ -65,14 +65,6 @@ def insertar_cliente(nombre, telefono, direccion):
     conn.commit()
     conn.close()
 
-def cargar_clientes():
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, nombre, telefono, direccion FROM clientes ORDER BY id DESC")
-    datos = cursor.fetchall()
-    conn.close()
-    return datos
-    
 def verificar_usuario(usuario, password):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -141,17 +133,11 @@ def mostrar_app(page):
         ft.Column([
             ft.Text("Control Taller", size=35, weight="bold"),
             ft.Text("¿Qué hacemos hoy?", size=16, color="grey"),
-            ft.ElevatedButton("🚗 Clientes", width=300, on_click=lambda e: mostrar_clientes(page)),
-            ft.ElevatedButton("🔧 Vehículos", width=300, on_click=lambda e: print("Abrir Vehículos")), 
             ft.ElevatedButton("📋 Órdenes de Trabajo", width=300, on_click=lambda e: print("Abrir Órdenes")),
+            ft.ElevatedButton("🔧 Vehículos", width=300, on_click=lambda e: print("Abrir Vehículos")), 
             ft.ElevatedButton("🚪 Cerrar sesión", width=300, color="red", on_click=cerrar_sesion)
         ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)
     )
-def mostrar_clientes(page):
-    # Inputs del formulario
-    nombre_input = ft.TextField(label="Nombre", width=300)
-    tel_input = ft.TextField(label="Teléfono", width=200)
-    dir_input = ft.TextField(label="Dirección", width=400)
 
     # Tabla
     tabla = ft.DataTable(
