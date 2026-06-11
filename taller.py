@@ -14,12 +14,13 @@ def conectar_db():
             password TEXT NOT NULL
         )
     ''')
+    conn.commit()
+    conn.close()
 
 def crear_tablas_taller():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    # Tabla usuarios - déjala, es para el login
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,16 +29,16 @@ def crear_tablas_taller():
         )
     ''')
 
-    # Tabla mecánicos - NUEVA
+    # Agregué especialidad aquí
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS mecanicos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT NOT NULL,
-            telefono TEXT
+            telefono TEXT,
+            especialidad TEXT
         )
     ''')
 
-    # Tabla trabajos - NUEVA 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS trabajos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,22 +54,32 @@ def crear_tablas_taller():
             FOREIGN KEY (mecanico_id) REFERENCES mecanicos(id)
         )
     ''')
-    
-    cursor.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)", ("admin", "1234"))
+
+    # Tabla clientes faltaba para insertar_cliente
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS clientes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            telefono TEXT,
+            direccion TEXT
+        )
+    ''')
+
+    cursor.execute("INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?,?)", ("admin", "1234"))
     conn.commit()
     conn.close()
 
-def insertar_mecanico(nombre, telefono):
+def insertar_mecanico(nombre, telefono, especialidad):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO mecanicos (nombre, telefono) VALUES (?,?)", (nombre, telefono))
+    cursor.execute("INSERT INTO mecanicos (nombre, telefono, especialidad) VALUES (?,?,?)", (nombre, telefono, especialidad))
     conn.commit()
     conn.close()
 
 def obtener_mecanicos():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute("SELECT id, nombre FROM mecanicos ORDER BY nombre")
+    cursor.execute("SELECT id, nombre, telefono, especialidad FROM mecanicos ORDER BY nombre")
     resultado = cursor.fetchall()
     conn.close()
     return resultado
@@ -87,16 +98,16 @@ def obtener_trabajos():
     resultado = cursor.fetchall()
     conn.close()
     return resultado
-    
+
 def insertar_cliente(nombre, telefono, direccion):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO clientes (nombre, telefono, direccion) VALUES (?,?,?)",
-                   (nombre, telefono, direccion))
+    cursor.execute("INSERT INTO clientes (nombre, telefono, direccion) VALUES (?,?,?)", (nombre, telefono, direccion))
     conn.commit()
     conn.close()
 
 def verificar_usuario(usuario, password):
+    conn = sqlite3.connect(DB_NAME)
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM usuarios WHERE usuario=? AND password=?", (usuario, password))
@@ -108,12 +119,16 @@ def crear_usuario(usuario, password):
     try:
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO usuarios (usuario, password) VALUES (?, ?)", (usuario, password))
+        cursor.execute("INSERT INTO usuarios (usuario, password) VALUES (?,?)", (usuario, password))
         conn.commit()
         conn.close()
         return True
     except sqlite3.IntegrityError:
         return False
+
+def mostrar_aviso(page, mensaje):
+    page.snack_bar = ft.SnackBar(ft.Text(mensaje), open=True)
+    page.update()
 
 def mostrar_login(page):
     usuario_input = ft.TextField(label="Usuario", width=300)
@@ -167,63 +182,43 @@ def mostrar_app(page):
             ft.ElevatedButton("Mecánicos", width=300, icon=ft.icons.BUILD, on_click=lambda e: mostrar_mecanicos(page)),
             ft.ElevatedButton("Órdenes de Trabajo", width=300, on_click=lambda e: mostrar_trabajos(page)),
             ft.ElevatedButton("Vehículos", width=300, on_click=lambda e: mostrar_aviso(page, "Módulo en construcción 🚧")),
-            ft.ElevatedButton("Cerrar sesión", icon=ft.icons.LOGOUT, color="red", width=300, on_click=lambda e: cerrar_sesion(page)),
+            ft.ElevatedButton("Cerrar sesión", icon=ft.icons.LOGOUT, color="red", width=300, on_click=cerrar_sesion),
         ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)
     )
 
+def cargar_tabla_mecanicos():
+    mecanicos = obtener_mecanicos()
+    rows = [ft.DataRow(cells=[
+        ft.DataCell(ft.Text(str(m[0]))),
+        ft.DataCell(ft.Text(m[1])),
+        ft.DataCell(ft.Text(m[2] or "")),
+        ft.DataCell(ft.Text(m[3] or ""))
+    ]) for m in mecanicos]
+    return ft.DataTable(columns=[
+        ft.DataColumn(ft.Text("ID")),
+        ft.DataColumn(ft.Text("Nombre")),
+        ft.DataColumn(ft.Text("Teléfono")),
+        ft.DataColumn(ft.Text("Especialidad"))
+    ], rows=rows, column_spacing=30)
+
 def mostrar_mecanicos(page):
-	nombre_input = ft.TextField(label="Nombre del mecánico", width=300)
-	telefono_input = ft.TextField(label="Teléfono", width=300)
-	especialidad_input = ft.TextField(label="Especialidad", width=300)
+    nombre_input = ft.TextField(label="Nombre del mecánico", width=300)
+    telefono_input = ft.TextField(label="Teléfono", width=300)
+    especialidad_input = ft.TextField(label="Especialidad", width=300)
+    tabla = cargar_tabla_mecanicos()
 
-	def guardar_mecanico(e):
-		if not nombre_input.value:
-			mostrar_aviso(page, "El nombre es obligatorio")
-			return
-		
-		insertar_mecanico(nombre_input.value, telefono_input.value, especialidad_input.value)
-		mostrar_aviso(page, f"Mecánico {nombre_input.value} guardado ✅")
-		nombre_input.value = ""
-		telefono_input.value = ""
-		especialidad_input.value = ""
-		page.update()
-		mostrar_mecanicos(page)
+    def guardar_mecanico(e):
+        if not nombre_input.value:
+            mostrar_aviso(page, "El nombre es obligatorio")
+            return
 
-	page.clean()
-	page.add(
-	ft.Column([
-			ft.Text("Registrar Mecánico", size=25, weight="bold"),
-			nombre_input,
-			telefono_input,
-			especialidad_input,
-			ft.ElevatedButton("Guardar", icon=ft.icons.SAVE, on_click=guardar_mecanico),
-			ft.ElevatedButton("Volver", on_click=lambda e: mostrar_app(page)),
-			cargar_tabla()
-	], spacing=10, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
-	)
-    
-    def cargar_tabla():
-        mecanicos = obtener_mecanicos()
-        rows = [ft.DataRow(cells=[
-            ft.DataCell(ft.Text(str(m[0]))),
-            ft.DataCell(ft.Text(m[1])),
-            ft.DataCell(ft.Text(m[2] or ""))
-        ]) for m in mecanicos]
-        return ft.DataTable(columns=[
-            ft.DataColumn(ft.Text("ID")),
-            ft.DataColumn(ft.Text("Nombre")),
-            ft.DataColumn(ft.Text("Teléfono"))
-        ], rows=rows)
-
-    tabla = cargar_tabla()
-
-    def agregar_mecanico(e):
-        if nombre_input.value:
-            insertar_mecanico(nombre_input.value, telefono_input.value)
-            nombre_input.value = ""
-            telefono_input.value = ""
-            tabla.rows = cargar_tabla().rows
-            page.update()
+        insertar_mecanico(nombre_input.value, telefono_input.value, especialidad_input.value)
+        mostrar_aviso(page, f"Mecánico {nombre_input.value} guardado ✅")
+        nombre_input.value = ""
+        telefono_input.value = ""
+        especialidad_input.value = ""
+        tabla.rows = cargar_tabla_mecanicos().rows
+        page.update()
 
     page.clean()
     page.add(
@@ -231,12 +226,13 @@ def mostrar_mecanicos(page):
             ft.Text("Gestión de Mecánicos", size=24, weight="bold"),
             nombre_input,
             telefono_input,
-            ft.ElevatedButton("Guardar Mecánico", on_click=agregar_mecanico),
+            especialidad_input,
+            ft.ElevatedButton("Guardar Mecánico", icon=ft.icons.SAVE, on_click=guardar_mecanico),
             ft.Divider(),
             ft.Text("Mecánicos registrados", size=20),
             tabla,
             ft.ElevatedButton("← Volver al menú", on_click=lambda e: mostrar_app(page))
-        ], scroll=ft.ScrollMode.AUTO)
+        ], scroll=ft.ScrollMode.AUTO, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10)
     )
     page.update()
 
@@ -247,11 +243,11 @@ def mostrar_trabajos(page):
         page.add(ft.Text("Primero registra al menos 1 mecánico"), ft.ElevatedButton("Volver", on_click=lambda e: mostrar_app(page)))
         page.update()
         return
-    
+
     desc_input = ft.TextField(label="Descripción del trabajo", width=300)
     mecanico_dropdown = ft.Dropdown(
         label="Mecánico",
-        options=[ft.dropdown.Option(str(m[0]), m[1]) for m in obtener_mecanicos()],
+        options=[ft.dropdown.Option(str(m[0]), m[1]) for m in mecanicos],
         width=300
     )
 
@@ -266,7 +262,7 @@ def mostrar_trabajos(page):
             ft.DataColumn(ft.Text("ID")),
             ft.DataColumn(ft.Text("Descripción")),
             ft.DataColumn(ft.Text("Mecánico"))
-        ], rows=rows)
+        ], rows=rows, column_spacing=30)
 
     tabla_trabajos = cargar_tabla_trabajos()
 
@@ -275,9 +271,10 @@ def mostrar_trabajos(page):
             insertar_trabajo(desc_input.value, int(mecanico_dropdown.value))
             desc_input.value = ""
             mecanico_dropdown.value = None
-            mecanico_dropdown.options = [ft.dropdown.Option(str(m[0]), m[1]) for m in obtener_mecanicos()]
             tabla_trabajos.rows = cargar_tabla_trabajos().rows
             page.update()
+        else:
+            mostrar_aviso(page, "Completa descripción y mecánico")
 
     page.clean()
     page.add(
@@ -290,19 +287,17 @@ def mostrar_trabajos(page):
             ft.Text("Trabajos registrados", size=20),
             tabla_trabajos,
             ft.ElevatedButton("← Volver al menú", on_click=lambda e: mostrar_app(page))
-        ], scroll=ft.ScrollMode.AUTO)
+        ], scroll=ft.ScrollMode.AUTO, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10)
     )
-    page.update() 
-def mostrar_aviso(page, mensaje):
-    page.snack_bar = ft.SnackBar(ft.Text(mensaje), open=True)
     page.update()
-    
+
 def main(page: ft.Page):
     page.title = "Control Taller"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.bgcolor = "#1a1a1a"
-    
+
+    conectar_db()
     crear_tablas_taller()
     mostrar_login(page)
 
