@@ -190,16 +190,16 @@ def guardar_mecanico(e): # 👈 NUEVA FUNCIÓN
      page.update()
      mostrar_mecanicos(page)
  
- page.clean()
- page.add(
-     ft.Column([
-         ft.Text("Registrar Mecánico", size=25, weight="bold"),
-         nombre_input,
-         telefono_input,
-         especialidad_input,
-         ft.ElevatedButton("Guardar", icon=ft.icons.SAVE, on_click=guardar_mecanico), # 👈 EL BOTÓN
-         ft.ElevatedButton("Volver", on_click=lambda e: mostrar_app(page)),
-         cargar_tabla()
+    page.clean()
+    page.add(
+        ft.Column([
+        ft.Text("Registrar Mecánico", size=25, weight="bold"),
+        nombre_input,
+        telefono_input,
+        especialidad_input,
+        ft.ElevatedButton("Guardar", icon=ft.icons.SAVE, on_click=guardar_mecanico), # 👈 EL BOTÓN
+        ft.ElevatedButton("Volver", on_click=lambda e: mostrar_app(page)),
+        cargar_tabla()
      ], spacing=10, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
  )
     
