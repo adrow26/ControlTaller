@@ -136,11 +136,7 @@ def reporte_ganancias(tipo, mecanico_id=None):
     conn.close()
     return resultado
 
-def generar_pdf_reporte(datos, tipo, mecanico_nombre):
-    fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
-    nombre_archivo = f"reporte_{tipo}_{fecha}.pdf"
-    ruta = os.path.join(os.getcwd(), nombre_archivo)
-
+def generar_pdf_reporte(datos, tipo, mecanico_nombre, ruta):
     c = canvas.Canvas(ruta, pagesize=A4)
     width, height = A4
 
@@ -180,7 +176,6 @@ def generar_pdf_reporte(datos, tipo, mecanico_nombre):
     c.drawString(12*cm, y, f"Bs {total_general:.2f}")
 
     c.save()
-    return nombre_archivo
 
 def verificar_usuario(usuario, password):
     conn = conectar_db()
@@ -423,11 +418,22 @@ def mostrar_reportes(page):
         ft.DataColumn(ft.Text("Ganancia Total"))
     ], rows=[])
 
+    def on_file_save_result(e: ft.FilePickerResultEvent):
+        if e.path and datos_actuales:
+            generar_pdf_reporte(datos_actuales, tipo_actual, mecanico_nombre_actual, e.path)
+            mostrar_aviso(page, f"PDF guardado ✅")
+
+    file_picker = ft.FilePicker(on_result=on_file_save_result)
+    page.overlay.append(file_picker)
+
     def cargar_reporte(tipo):
         nonlocal datos_actuales, tipo_actual, mecanico_nombre_actual
         tipo_actual = tipo
         mec_id = filtro_mecanico.value if filtro_mecanico.value else None
-        mecanico_nombre_actual = filtro_mecanico.options[[o.key for o in filtro_mecanico.options].index(mec_id if mec_id else "")].text
+        if mec_id:
+            mecanico_nombre_actual = filtro_mecanico.options[[o.key for o in filtro_mecanico.options].index(mec_id)].text
+        else:
+            mecanico_nombre_actual = "Todos"
 
         datos_actuales = reporte_ganancias(tipo, mec_id)
         rows = [ft.DataRow(cells=[
@@ -442,9 +448,8 @@ def mostrar_reportes(page):
         if not datos_actuales:
             mostrar_aviso(page, "No hay datos para exportar")
             return
-
-        archivo = generar_pdf_reporte(datos_actuales, tipo_actual, mecanico_nombre_actual)
-        mostrar_aviso(page, f"PDF generado: {archivo}")
+        nombre = f"reporte_{tipo_actual}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+        file_picker.save_file(file_name=nombre, allowed_extensions=["pdf"])
 
     filtro_mecanico.on_change = lambda e: cargar_reporte(tipo_actual)
 
