@@ -238,9 +238,8 @@ def mostrar_login(page):
 
 def mostrar_app(page):
     page.clean()
-    # page.overlay.clear() # comentada para no borrar el FilePicker
     page.add(
-        ft.Column([
+    ft.Column([
             ft.Text("Control Taller", size=35, weight="bold"),
             ft.Text("¿Qué hacemos hoy?", size=16, color="grey"),
             ft.ElevatedButton("Mecánicos", width=300, icon="build", on_click=lambda e: mostrar_mecanicos(page)),
@@ -430,7 +429,7 @@ def mostrar_reportes(page):
         ft.DataColumn(ft.Text("Orden")),
         ft.DataColumn(ft.Text("Repuestos")),
         ft.DataColumn(ft.Text("Mecánico")),
-        ft.DataColumn(ft.Text("Total"))
+        ft.DataColumn(ft.Text("Costo trabajo"))
     ], rows=[])
 
     def on_file_save_result(e: ft.FilePickerResultEvent):
@@ -469,7 +468,7 @@ def mostrar_reportes(page):
             fecha_texto_actual = "Todos"
 
         query = f'''
-            SELECT t.fecha, t.orden_trabajo, t.repuestos_cambiados, m.nombre, t.total
+            SELECT t.fecha, t.orden_trabajo, t.repuestos_cambiados, m.nombre, t.costo trabajo
             FROM trabajos t
             LEFT JOIN mecanicos m ON t.mecanico_id = m.id
             WHERE t.fecha {filtro}
@@ -490,14 +489,14 @@ def mostrar_reportes(page):
             ft.DataCell(ft.Text(d[1])),
             ft.DataCell(ft.Text(d[2] or "-", max_lines=2)),
             ft.DataCell(ft.Text(d[3] or "Sin asignar")),
-            ft.DataCell(ft.Text(f"Bs {d[4]:.2f}", weight="bold", color="green"))
+            ft.DataCell(ft.Text(f"Bs {d[4]:.2f}", weight="bold", color="blue")) # <-d[4] ahora es costo trabajo
         ]) for d in datos_actuales]
         tabla_reporte.rows = rows
 
         # Ganancia = suma de todos los trabajos del filtro
-        total_general = sum([d[4] or 0 for d in datos_actuales])
+        total_general = sum([d[4] or 0 for d in datos_actuales]) # <- suma solo mano de obra
         fecha_label.value = f"Período: {fecha_texto_actual}"
-        total_general_text.value = f"Total General: Bs {total_general:.2f}"
+        total_general_text.value = f"Ganancia Mano de Obra: Bs {total_general:.2f}"
         page.update()
 
     def exportar_pdf(e):
@@ -522,7 +521,7 @@ def mostrar_reportes(page):
         total_general_text,
         ft.ElevatedButton("📄 Exportar PDF", icon="download", color="blue", on_click=exportar_pdf),
         ft.Divider(),
-        ft.Container(tabla_reporte, expand=True),
+        ft.Container(tabla_reporte, expand=True), height=400, scroll=ft.ScrollMode.AUTO),
     ], spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
 
     page.clean()
