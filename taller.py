@@ -7,6 +7,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 
 DB_NAME = "taller.db"
+file_picker_global = None
 
 def conectar_db():
     conn = sqlite3.connect(DB_NAME)
@@ -237,6 +238,7 @@ def mostrar_login(page):
 
 def mostrar_app(page):
     page.clean()
+    # page.overlay.clear() # comentada para no borrar el FilePicker
     page.add(
         ft.Column([
             ft.Text("Control Taller", size=35, weight="bold"),
@@ -247,6 +249,7 @@ def mostrar_app(page):
             ft.ElevatedButton("Cerrar sesión", icon="logout", color="red", width=300, on_click=lambda e: mostrar_login(page)),
         ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)
     )
+    page.update()
 
 def cargar_tabla_mecanicos():
     mecanicos = obtener_mecanicos()
@@ -408,8 +411,8 @@ def mostrar_reportes(page):
     mecanicos = obtener_mecanicos()
     filtro_mecanico = ft.Dropdown(
         label="Filtrar por Mecánico",
-        options=[ft.dropdown.Option("", "Todos")] + [ft.dropdown.Option(str(m["id"]), m["nombre"]) for m in mecanicos],
-        value="",
+        options=[ft.dropdown.Option("todos", "Todos")] + [ft.dropdown.Option(str(m["id"]), m["nombre"]) for m in mecanicos],
+        value="todos",
         width=300
     )
 
@@ -421,10 +424,13 @@ def mostrar_reportes(page):
     fecha_label = ft.Text("Período: ", size=14, color="grey")
     total_general_text = ft.Text("Total General: Bs 0.00", size=20, weight="bold", color="green")
 
+    # Tabla ahora muestra detalle de cada trabajo
     tabla_reporte = ft.DataTable(columns=[
+        ft.DataColumn(ft.Text("Fecha")),
+        ft.DataColumn(ft.Text("Orden")),
+        ft.DataColumn(ft.Text("Repuestos")),
         ft.DataColumn(ft.Text("Mecánico")),
-        ft.DataColumn(ft.Text("Trabajos")),
-        ft.DataColumn(ft.Text("Ganancia"))
+        ft.DataColumn(ft.Text("Total"))
     ], rows=[])
 
     def on_file_save_result(e: ft.FilePickerResultEvent):
@@ -432,33 +438,104 @@ def mostrar_reportes(page):
             generar_pdf_reporte(datos_actuales, tipo_actual, mecanico_nombre_actual, fecha_texto_actual, e.path)
             mostrar_aviso(page, f"PDF guardado ✅")
 
-    file_picker = ft.FilePicker(on_result=on_file_save_result)
-    page.overlay.append(file_picker)
-
+    
     def cargar_reporte(tipo):
         nonlocal datos_actuales, tipo_actual, mecanico_nombre_actual, fecha_texto_actual
         tipo_actual = tipo
-        mec_id = filtro_mecanico.value if filtro_mecanico.value else None
+        mec_id = None if filtro_mecanico.value == "todos" else filtro_mecanico.value
 
         if mec_id:
             mecanico_nombre_actual = next(m["nombre"] for m in mecanicos if str(m["id"]) == mec_id)
         else:
             mecanico_nombre_actual = "Todos"
 
-        datos_actuales, fecha_texto_actual = reporte_ganancias(tipo, mec_id)
+        # Query que trae detalle de cada trabajo
+        conn = conectar_db()
+        cursor = conn.cursor()
 
+        hoy = datetime.now()
+        if tipo == "dia":
+            filtro = "= date('now')"
+            fecha_texto_actual = hoy.strftime("%d/%m/%Y")
+        elif tipo == "semana":
+            filtro = ">= date('now', '-7 days')"
+            fecha_inicio = hoy - timedelta(days=7)
+            fecha_texto_actual = f"{fecha_inicio.strftime('%d/%m')} al {hoy.strftime('%d/%m/%Y')}"
+        elif tipo == "mes":
+            filtro = ">= date('now', 'start of month')"
+            fecha_texto_actual = hoy.strftime("%B %Y").capitalize()
+        else:
+            filtro = ">= '1900-01-01'"
+            fecha_texto_actual = "Todos"
+
+        query = f'''
+            SELECT t.fecha, t.orden_trabajo, t.repuestos_cambiados, m.nombre, t.total
+            FROM trabajos t
+            LEFT JOIN mecanicos m ON t.mecanico_id = m.id
+            WHERE t.fecha {filtro}
+        '''
+        params = []
+        if mec_id:
+            query += " AND m.id =?"
+            params.append(mec_id)
+        query += " ORDER BY t.fecha DESC, t.id DESC"
+
+        cursor.execute(query, params)
+        datos_actuales = cursor.fetchall()
+        conn.close()
+
+        # Mostrar cada trabajo en la tabla
         rows = [ft.DataRow(cells=[
             ft.DataCell(ft.Text(d[0])),
-            ft.DataCell(ft.Text(str(d[1]))),
-            ft.DataCell(ft.Text(f"Bs {d[2]:.2f}", weight="bold", color="green"))
+            ft.DataCell(ft.Text(d[1])),
+            ft.DataCell(ft.Text(d[2] or "-", max_lines=2)),
+            ft.DataCell(ft.Text(d[3] or "Sin asignar")),
+            ft.DataCell(ft.Text(f"Bs {d[4]:.2f}", weight="bold", color="green"))
         ]) for d in datos_actuales]
         tabla_reporte.rows = rows
 
-        total_general = sum([d[2] or 0 for d in datos_actuales])
+        # Ganancia = suma de todos los trabajos del filtro
+        total_general = sum([d[4] or 0 for d in datos_actuales])
         fecha_label.value = f"Período: {fecha_texto_actual}"
         total_general_text.value = f"Total General: Bs {total_general:.2f}"
         page.update()
 
+    def exportar_pdf(e):
+        if not datos_actuales:
+            mostrar_aviso(page, "No hay datos para exportar")
+            return
+        nombre = f"reporte_{tipo_actual}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+        file_picker_global.save_file(file_name=nombre, allowed_extensions=["pdf"])
+
+    filtro_mecanico.on_change = lambda e: cargar_reporte(tipo_actual)
+
+    contenido = ft.Column([
+        ft.Text("Reportes de Ganancias", size=24, weight="bold"),
+        ft.Text("Detalle de trabajos por período", size=16, color="grey"),
+        filtro_mecanico,
+        ft.Row([
+            ft.ElevatedButton("Hoy", on_click=lambda e: cargar_reporte("dia")),
+            ft.ElevatedButton("Semana", on_click=lambda e: cargar_reporte("semana")),
+            ft.ElevatedButton("Mes", on_click=lambda e: cargar_reporte("mes"))
+        ], alignment=ft.MainAxisAlignment.CENTER, spacing=10),
+        fecha_label,
+        total_general_text,
+        ft.ElevatedButton("📄 Exportar PDF", icon="download", color="blue", on_click=exportar_pdf),
+        ft.Divider(),
+        ft.Container(tabla_reporte, expand=True),
+    ], spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
+
+    page.clean()
+    page.add(
+        ft.Column([
+            ft.Container(contenido, expand=True),
+            ft.ElevatedButton("← Volver al menú", on_click=lambda e: mostrar_app(page), width=300)
+        ], expand=True)
+    )
+
+    cargar_reporte("dia")
+    page.update()
+    
     def exportar_pdf(e):
         if not datos_actuales:
             mostrar_aviso(page, "No hay datos para exportar")
@@ -503,6 +580,10 @@ def main(page: ft.Page):
     page.window.width = 450
     page.scroll = ft.ScrollMode.AUTO
     page.padding = 20
+
+    global file_picker_global
+    file_picker_global = ft.FilePicker()
+    page.overlay.append(file_picker_global)
 
     crear_tablas_taller()
     mostrar_login(page)
