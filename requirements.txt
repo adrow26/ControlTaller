@@ -1,2 +1,2 @@
-flet==0.24.1
+flet==0.28.3
 reportlab==4.0.9
