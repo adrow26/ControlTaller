@@ -310,7 +310,7 @@ def cargar_tabla_trabajos():
         ft.DataCell(ft.Text(t["mecanico"] or "Sin asignar")),
         ft.DataCell(ft.Text(t["orden_trabajo"])),
         ft.DataCell(ft.Text(t["repuestos_cambiados"] or "-")),
-        ft.DataCell(ft.Text(f"Bs {t['costo_repuesto']:.2f}")),
+        ft.DataCell(ft.Text(f"Bs {float(t['costo_repuesto'] or 0):.2f}")),
         ft.DataCell(ft.Text(f"Bs {t['costo_trabajo']:.2f}")),
         ft.DataCell(ft.Text(f"Bs {t['total']:.2f}", weight="bold")),
         ft.DataCell(ft.Text(t["estado"]))
@@ -489,12 +489,12 @@ def mostrar_reportes(page):
             ft.DataCell(ft.Text(d[1])),
             ft.DataCell(ft.Text(d[2] or "-", max_lines=2)),
             ft.DataCell(ft.Text(d[3] or "Sin asignar")),
-            ft.DataCell(ft.Text(f"Bs {d[4]:.2f}", weight="bold", color="blue")) # <-d[4] ahora es costo trabajo
+            ft.DataCell(ft.Text(f"Bs {float(d[4] or 0):.2f}", weight="bold", color="blue")) # <-d[4] ahora es costo trabajo
         ]) for d in datos_actuales]
         tabla_reporte.rows = rows
 
         # Ganancia = suma de todos los trabajos del filtro
-        total_general = sum([d[4] or 0 for d in datos_actuales]) # <- suma solo mano de obra
+        total_general = sum([float(d[4] or 0 for d in datos_actuales]) # <- suma solo mano de obra
         fecha_label.value = f"Período: {fecha_texto_actual}"
         total_general_text.value = f"Ganancia Mano de Obra: Bs {total_general:.2f}"
         page.update()
