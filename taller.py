@@ -240,7 +240,7 @@ def mostrar_app(page):
     page.clean()
     page.add(
     ft.Column([
-            ft.Text("Control Taller", size=35, weight="bold"),
+            ft.Text("Control Taller MR", size=35, weight="bold"),
             ft.Text("¿Qué hacemos hoy?", size=16, color="grey"),
             ft.ElevatedButton("Mecánicos", width=300, icon="build", on_click=lambda e: mostrar_mecanicos(page)),
             ft.ElevatedButton("Órdenes de Trabajo", width=300, icon="description", on_click=lambda e: mostrar_trabajos(page)),
