@@ -521,7 +521,7 @@ def mostrar_reportes(page):
         total_general_text,
         ft.ElevatedButton("📄 Exportar PDF", icon="download", color="blue", on_click=exportar_pdf),
         ft.Divider(),
-        ft.Container(tabla_reporte, expand=True, height=400, scroll=ft.ScrollMode.AUTO),
+        ft.Container(tabla_reporte, expand=True, height=400),
     ], spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
 
     page.clean()
