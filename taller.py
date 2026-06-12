@@ -500,7 +500,7 @@ def main(page: ft.Page):
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.bgcolor = "#1a1a1a"
-    page.window_width = 450
+    page.window.width = 450
     page.scroll = ft.ScrollMode.AUTO
     page.padding = 20
 
