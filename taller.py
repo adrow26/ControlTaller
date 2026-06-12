@@ -10,6 +10,7 @@ DB_NAME = "taller.db"
 
 def conectar_db():
     conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
     return conn
 
 def crear_tablas_taller():
@@ -30,15 +31,6 @@ def crear_tablas_taller():
             nombre TEXT NOT NULL,
             telefono TEXT,
             especialidad TEXT
-        )
-    ''')
-
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS clientes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            telefono TEXT,
-            direccion TEXT
         )
     ''')
 
@@ -88,16 +80,13 @@ def insertar_trabajo(mecanico_id, orden_trabajo, repuestos, costo_rep, costo_tra
 def obtener_trabajos(filtro_fecha=None, mecanico_id=None):
     conn = conectar_db()
     cursor = conn.cursor()
-
-    query = "SELECT t.id, t.fecha, m.nombre, t.orden_trabajo, t.repuestos_cambiados, t.costo_repuesto, t.costo_trabajo, t.total, t.estado FROM trabajos t LEFT JOIN mecanicos m ON t.mecanico_id = m.id WHERE 1=1"
-
+    query = "SELECT t.id, t.fecha, m.nombre as mecanico, t.orden_trabajo, t.repuestos_cambiados, t.costo_repuesto, t.costo_trabajo, t.total, t.estado FROM trabajos t LEFT JOIN mecanicos m ON t.mecanico_id = m.id WHERE 1=1"
     params = []
     if filtro_fecha:
         query += f" AND t.fecha {filtro_fecha}"
     if mecanico_id:
         query += " AND t.mecanico_id =?"
         params.append(mecanico_id)
-
     query += " ORDER BY t.fecha DESC, t.id DESC"
     cursor.execute(query, params)
     resultado = cursor.fetchall()
@@ -108,14 +97,20 @@ def reporte_ganancias(tipo, mecanico_id=None):
     conn = conectar_db()
     cursor = conn.cursor()
 
+    hoy = datetime.now()
     if tipo == "dia":
         filtro = "= date('now')"
+        fecha_texto = hoy.strftime("%d/%m/%Y")
     elif tipo == "semana":
         filtro = ">= date('now', '-7 days')"
+        fecha_inicio = hoy - timedelta(days=7)
+        fecha_texto = f"{fecha_inicio.strftime('%d/%m')} al {hoy.strftime('%d/%m/%Y')}"
     elif tipo == "mes":
         filtro = ">= date('now', 'start of month')"
+        fecha_texto = hoy.strftime("%B %Y").capitalize()
     else:
         filtro = ""
+        fecha_texto = "Todos"
 
     query = f'''
         SELECT m.nombre, COUNT(t.id) as total_trabajos, SUM(t.total) as ganancia
@@ -134,9 +129,9 @@ def reporte_ganancias(tipo, mecanico_id=None):
     cursor.execute(query, params)
     resultado = cursor.fetchall()
     conn.close()
-    return resultado
+    return resultado, fecha_texto
 
-def generar_pdf_reporte(datos, tipo, mecanico_nombre, ruta):
+def generar_pdf_reporte(datos, tipo, mecanico_nombre, fecha_texto, ruta):
     c = canvas.Canvas(ruta, pagesize=A4)
     width, height = A4
 
@@ -144,7 +139,7 @@ def generar_pdf_reporte(datos, tipo, mecanico_nombre, ruta):
     c.drawString(2*cm, height-2*cm, "Reporte de Ganancias - Control Taller")
 
     c.setFont("Helvetica", 12)
-    c.drawString(2*cm, height-3*cm, f"Período: {tipo.capitalize()}")
+    c.drawString(2*cm, height-3*cm, f"Período: {tipo.capitalize()} - {fecha_texto}")
     c.drawString(2*cm, height-3.7*cm, f"Mecánico: {mecanico_nombre}")
     c.drawString(2*cm, height-4.4*cm, f"Fecha emisión: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
@@ -163,7 +158,7 @@ def generar_pdf_reporte(datos, tipo, mecanico_nombre, ruta):
         c.drawString(2*cm, y, str(d[0]))
         c.drawString(8*cm, y, str(d[1]))
         c.drawString(12*cm, y, f"Bs {d[2]:.2f}")
-        total_general += d[2]
+        total_general += d[2] or 0
         y -= 0.8*cm
         if y < 3*cm:
             c.showPage()
@@ -171,8 +166,8 @@ def generar_pdf_reporte(datos, tipo, mecanico_nombre, ruta):
 
     c.line(2*cm, y, 18*cm, y)
     y -= 0.8*cm
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(8*cm, y, "TOTAL:")
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(8*cm, y, "TOTAL GENERAL:")
     c.drawString(12*cm, y, f"Bs {total_general:.2f}")
 
     c.save()
@@ -201,7 +196,7 @@ def mostrar_aviso(page, mensaje):
     page.update()
 
 def mostrar_login(page):
-    usuario_input = ft.TextField(label="Usuario", width=300)
+    usuario_input = ft.TextField(label="Usuario", width=300, autofocus=True)
     password_input = ft.TextField(label="Contraseña", password=True, width=300)
     mensaje = ft.Text("", color="red")
 
@@ -256,10 +251,10 @@ def mostrar_app(page):
 def cargar_tabla_mecanicos():
     mecanicos = obtener_mecanicos()
     rows = [ft.DataRow(cells=[
-        ft.DataCell(ft.Text(str(m[0]))),
-        ft.DataCell(ft.Text(m[1])),
-        ft.DataCell(ft.Text(m[2] or "")),
-        ft.DataCell(ft.Text(m[3] or ""))
+        ft.DataCell(ft.Text(str(m["id"]))),
+        ft.DataCell(ft.Text(m["nombre"])),
+        ft.DataCell(ft.Text(m["telefono"] or "")),
+        ft.DataCell(ft.Text(m["especialidad"] or ""))
     ]) for m in mecanicos]
     return ft.DataTable(columns=[
         ft.DataColumn(ft.Text("ID")),
@@ -275,11 +270,10 @@ def mostrar_mecanicos(page):
     tabla = cargar_tabla_mecanicos()
 
     def guardar_mecanico(e):
-        if not nombre_input.value:
+        if not nombre_input.value.strip():
             mostrar_aviso(page, "El nombre es obligatorio")
             return
-
-        insertar_mecanico(nombre_input.value, telefono_input.value, especialidad_input.value)
+        insertar_mecanico(nombre_input.value.strip(), telefono_input.value.strip(), especialidad_input.value.strip())
         mostrar_aviso(page, f"Mecánico {nombre_input.value} guardado ✅")
         nombre_input.value = ""
         telefono_input.value = ""
@@ -287,33 +281,37 @@ def mostrar_mecanicos(page):
         tabla.rows = cargar_tabla_mecanicos().rows
         page.update()
 
+    contenido = ft.Column([
+        ft.Text("Gestión de Mecánicos", size=24, weight="bold"),
+        nombre_input,
+        telefono_input,
+        especialidad_input,
+        ft.ElevatedButton("Guardar Mecánico", icon=ft.icons.SAVE, on_click=guardar_mecanico),
+        ft.Divider(),
+        ft.Text("Mecánicos registrados", size=20),
+        ft.Container(tabla, expand=True),
+    ], spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
+
     page.clean()
     page.add(
         ft.Column([
-            ft.Text("Gestión de Mecánicos", size=24, weight="bold"),
-            nombre_input,
-            telefono_input,
-            especialidad_input,
-            ft.ElevatedButton("Guardar Mecánico", icon=ft.icons.SAVE, on_click=guardar_mecanico),
-            ft.Divider(),
-            ft.Text("Mecánicos registrados", size=20),
-            tabla,
-            ft.ElevatedButton("← Volver al menú", on_click=lambda e: mostrar_app(page))
-        ], scroll=ft.ScrollMode.AUTO, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10)
+            ft.Container(contenido, expand=True),
+            ft.ElevatedButton("← Volver al menú", on_click=lambda e: mostrar_app(page), width=300)
+        ], expand=True)
     )
     page.update()
 
 def cargar_tabla_trabajos():
     trabajos = obtener_trabajos()
     rows = [ft.DataRow(cells=[
-        ft.DataCell(ft.Text(t[1])),
-        ft.DataCell(ft.Text(t[2] or "Sin asignar")),
-        ft.DataCell(ft.Text(t[3])),
-        ft.DataCell(ft.Text(t[4] or "-")),
-        ft.DataCell(ft.Text(f"Bs {t[5]:.2f}")),
-        ft.DataCell(ft.Text(f"Bs {t[6]:.2f}")),
-        ft.DataCell(ft.Text(f"Bs {t[7]:.2f}", weight="bold")),
-        ft.DataCell(ft.Text(t[8]))
+        ft.DataCell(ft.Text(t["fecha"])),
+        ft.DataCell(ft.Text(t["mecanico"] or "Sin asignar")),
+        ft.DataCell(ft.Text(t["orden_trabajo"])),
+        ft.DataCell(ft.Text(t["repuestos_cambiados"] or "-")),
+        ft.DataCell(ft.Text(f"Bs {t['costo_repuesto']:.2f}")),
+        ft.DataCell(ft.Text(f"Bs {t['costo_trabajo']:.2f}")),
+        ft.DataCell(ft.Text(f"Bs {t['total']:.2f}", weight="bold")),
+        ft.DataCell(ft.Text(t["estado"]))
     ]) for t in trabajos]
     return ft.DataTable(columns=[
         ft.DataColumn(ft.Text("Fecha")),
@@ -330,17 +328,22 @@ def mostrar_trabajos(page):
     mecanicos = obtener_mecanicos()
     if not mecanicos:
         page.clean()
-        page.add(ft.Text("Primero registra al menos 1 mecánico"), ft.ElevatedButton("Volver", on_click=lambda e: mostrar_app(page)))
+        page.add(
+            ft.Column([
+                ft.Text("Primero registra al menos 1 mecánico"),
+                ft.ElevatedButton("Volver", on_click=lambda e: mostrar_app(page))
+            ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+        )
         page.update()
         return
 
     mecanico_dropdown = ft.Dropdown(
         label="Mecánico",
-        options=[ft.dropdown.Option(str(m[0]), m[1]) for m in mecanicos],
+        options=[ft.dropdown.Option(str(m["id"]), m["nombre"]) for m in mecanicos],
         width=300
     )
     orden_input = ft.TextField(label="Orden de Trabajo N°", width=300)
-    repuestos_input = ft.TextField(label="Repuestos cambiados", width=300, multiline=True, min_lines=2)
+    repuestos_input = ft.TextField(label="Repuestos cambiados", width=300, multiline=True, min_lines=2, max_lines=4)
     costo_rep_input = ft.TextField(label="Costo del repuesto Bs", width=145, keyboard_type=ft.KeyboardType.NUMBER)
     costo_trab_input = ft.TextField(label="Costo del trabajo Bs", width=145, keyboard_type=ft.KeyboardType.NUMBER)
     total_text = ft.Text("Total: Bs 0.00", size=18, weight="bold", color="green")
@@ -360,19 +363,17 @@ def mostrar_trabajos(page):
     tabla = cargar_tabla_trabajos()
 
     def guardar_trabajo(e):
-        if not mecanico_dropdown.value or not orden_input.value:
+        if not mecanico_dropdown.value or not orden_input.value.strip():
             mostrar_aviso(page, "Selecciona mecánico y número de orden")
             return
-
         insertar_trabajo(
             int(mecanico_dropdown.value),
-            orden_input.value,
-            repuestos_input.value,
+            orden_input.value.strip(),
+            repuestos_input.value.strip(),
             costo_rep_input.value,
             costo_trab_input.value
         )
         mostrar_aviso(page, f"Orden {orden_input.value} guardada ✅")
-
         orden_input.value = ""
         repuestos_input.value = ""
         costo_rep_input.value = ""
@@ -381,21 +382,25 @@ def mostrar_trabajos(page):
         tabla.rows = cargar_tabla_trabajos().rows
         page.update()
 
+    contenido = ft.Column([
+        ft.Text("Nueva Orden de Trabajo", size=24, weight="bold"),
+        mecanico_dropdown,
+        orden_input,
+        repuestos_input,
+        ft.Row([costo_rep_input, costo_trab_input], alignment=ft.MainAxisAlignment.CENTER),
+        total_text,
+        ft.ElevatedButton("Guardar Orden", icon=ft.icons.SAVE, on_click=guardar_trabajo),
+        ft.Divider(),
+        ft.Text("Historial de Órdenes", size=20),
+        ft.Container(tabla, expand=True),
+    ], spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
+
     page.clean()
     page.add(
         ft.Column([
-            ft.Text("Nueva Orden de Trabajo", size=24, weight="bold"),
-            mecanico_dropdown,
-            orden_input,
-            repuestos_input,
-            ft.Row([costo_rep_input, costo_trab_input], alignment=ft.MainAxisAlignment.CENTER),
-            total_text,
-            ft.ElevatedButton("Guardar Orden", icon=ft.icons.SAVE, on_click=guardar_trabajo),
-            ft.Divider(),
-            ft.Text("Historial de Órdenes", size=20),
-            ft.Container(tabla, expand=True),
-            ft.ElevatedButton("← Volver al menú", on_click=lambda e: mostrar_app(page))
-        ], scroll=ft.ScrollMode.AUTO, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10)
+            ft.Container(contenido, expand=True),
+            ft.ElevatedButton("← Volver al menú", on_click=lambda e: mostrar_app(page), width=300)
+        ], expand=True)
     )
     page.update()
 
@@ -403,7 +408,7 @@ def mostrar_reportes(page):
     mecanicos = obtener_mecanicos()
     filtro_mecanico = ft.Dropdown(
         label="Filtrar por Mecánico",
-        options=[ft.dropdown.Option("", "Todos")] + [ft.dropdown.Option(str(m[0]), m[1]) for m in mecanicos],
+        options=[ft.dropdown.Option("", "Todos")] + [ft.dropdown.Option(str(m["id"]), m["nombre"]) for m in mecanicos],
         value="",
         width=300
     )
@@ -411,37 +416,47 @@ def mostrar_reportes(page):
     datos_actuales = []
     tipo_actual = "dia"
     mecanico_nombre_actual = "Todos"
+    fecha_texto_actual = ""
+
+    fecha_label = ft.Text("Período: ", size=14, color="grey")
+    total_general_text = ft.Text("Total General: Bs 0.00", size=20, weight="bold", color="green")
 
     tabla_reporte = ft.DataTable(columns=[
         ft.DataColumn(ft.Text("Mecánico")),
         ft.DataColumn(ft.Text("Trabajos")),
-        ft.DataColumn(ft.Text("Ganancia Total"))
+        ft.DataColumn(ft.Text("Ganancia"))
     ], rows=[])
 
     def on_file_save_result(e: ft.FilePickerResultEvent):
         if e.path and datos_actuales:
-            generar_pdf_reporte(datos_actuales, tipo_actual, mecanico_nombre_actual, e.path)
+            generar_pdf_reporte(datos_actuales, tipo_actual, mecanico_nombre_actual, fecha_texto_actual, e.path)
             mostrar_aviso(page, f"PDF guardado ✅")
 
     file_picker = ft.FilePicker(on_result=on_file_save_result)
     page.overlay.append(file_picker)
 
     def cargar_reporte(tipo):
-        nonlocal datos_actuales, tipo_actual, mecanico_nombre_actual
+        nonlocal datos_actuales, tipo_actual, mecanico_nombre_actual, fecha_texto_actual
         tipo_actual = tipo
         mec_id = filtro_mecanico.value if filtro_mecanico.value else None
+
         if mec_id:
-            mecanico_nombre_actual = filtro_mecanico.options[[o.key for o in filtro_mecanico.options].index(mec_id)].text
+            mecanico_nombre_actual = next(m["nombre"] for m in mecanicos if str(m["id"]) == mec_id)
         else:
             mecanico_nombre_actual = "Todos"
 
-        datos_actuales = reporte_ganancias(tipo, mec_id)
+        datos_actuales, fecha_texto_actual = reporte_ganancias(tipo, mec_id)
+
         rows = [ft.DataRow(cells=[
             ft.DataCell(ft.Text(d[0])),
             ft.DataCell(ft.Text(str(d[1]))),
             ft.DataCell(ft.Text(f"Bs {d[2]:.2f}", weight="bold", color="green"))
         ]) for d in datos_actuales]
         tabla_reporte.rows = rows
+
+        total_general = sum([d[2] or 0 for d in datos_actuales])
+        fecha_label.value = f"Período: {fecha_texto_actual}"
+        total_general_text.value = f"Total General: Bs {total_general:.2f}"
         page.update()
 
     def exportar_pdf(e):
@@ -453,22 +468,28 @@ def mostrar_reportes(page):
 
     filtro_mecanico.on_change = lambda e: cargar_reporte(tipo_actual)
 
+    contenido = ft.Column([
+        ft.Text("Reportes de Ganancias", size=24, weight="bold"),
+        ft.Text("Ganancia por mecánico", size=16, color="grey"),
+        filtro_mecanico,
+        ft.Row([
+            ft.ElevatedButton("Hoy", on_click=lambda e: cargar_reporte("dia")),
+            ft.ElevatedButton("Semana", on_click=lambda e: cargar_reporte("semana")),
+            ft.ElevatedButton("Mes", on_click=lambda e: cargar_reporte("mes"))
+        ], alignment=ft.MainAxisAlignment.CENTER, spacing=10),
+        fecha_label,
+        total_general_text,
+        ft.ElevatedButton("📄 Exportar PDF", icon=ft.icons.DOWNLOAD, color="blue", on_click=exportar_pdf),
+        ft.Divider(),
+        ft.Container(tabla_reporte, expand=True),
+    ], spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
+
     page.clean()
     page.add(
         ft.Column([
-            ft.Text("Reportes de Ganancias", size=24, weight="bold"),
-            ft.Text("Ganancia por mecánico", size=16, color="grey"),
-            filtro_mecanico,
-            ft.Row([
-                ft.ElevatedButton("Hoy", on_click=lambda e: cargar_reporte("dia")),
-                ft.ElevatedButton("Semana", on_click=lambda e: cargar_reporte("semana")),
-                ft.ElevatedButton("Mes", on_click=lambda e: cargar_reporte("mes"))
-            ], alignment=ft.MainAxisAlignment.CENTER, spacing=10),
-            ft.ElevatedButton("📄 Exportar PDF", icon=ft.icons.DOWNLOAD, color="blue", on_click=exportar_pdf),
-            ft.Divider(),
-            ft.Container(tabla_reporte, expand=True),
-            ft.ElevatedButton("← Volver al menú", on_click=lambda e: mostrar_app(page))
-        ], scroll=ft.ScrollMode.AUTO, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)
+            ft.Container(contenido, expand=True),
+            ft.ElevatedButton("← Volver al menú", on_click=lambda e: mostrar_app(page), width=300)
+        ], expand=True)
     )
 
     cargar_reporte("dia")
@@ -476,10 +497,12 @@ def mostrar_reportes(page):
 
 def main(page: ft.Page):
     page.title = "Control Taller"
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.bgcolor = "#1a1a1a"
     page.window_width = 450
+    page.scroll = ft.ScrollMode.AUTO
+    page.padding = 20
 
     crear_tablas_taller()
     mostrar_login(page)
