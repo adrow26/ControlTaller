@@ -581,10 +581,17 @@ def main(page: ft.Page):
     page.padding = 20
 
     global file_picker_global
-    file_picker_global = ft.FilePicker()
+    file_picker_global = ft.FilePicker(on_result=guardar_pdf)
     page.overlay.append(file_picker_global)
 
     crear_tablas_taller()
     mostrar_login(page)
-
+    
+def guardar_pdf(e: ft.FilePickerResultEvent):
+    if e.path:
+       generar_pdf(e.path, datos_actuales, total_general)
+       page.snack_bar = ft.SnackBar(ft.Text(f"PDF guardado"))
+       page.snack_bar.open = True
+       page.update()
+        
 ft.app(target=main, port=int(os.getenv("PORT", 8080)), host="0.0.0.0", view=None)
