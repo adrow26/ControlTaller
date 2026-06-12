@@ -15,7 +15,6 @@ def main(page: ft.Page):
     page.window.width = 450
     page.scroll = ft.ScrollMode.AUTO
     
-    # FilePicker obligatorio para descargar PDF en web/Railway
     file_picker = ft.FilePicker()
     page.overlay.append(file_picker)
 
@@ -42,7 +41,7 @@ def main(page: ft.Page):
     txt_costo = ft.TextField(label="Costo repuesto Bs", width=180, keyboard_type=ft.KeyboardType.NUMBER)
     txt_total = ft.TextField(label="Total Bs", width=180, keyboard_type=ft.KeyboardType.NUMBER)
 
-    # Tabla con expand=True para que no se bloquee después de 4 filas
+    # Tabla
     tabla = ft.DataTable(
         columns=[
             ft.DataColumn(ft.Text("Cliente")),
@@ -60,7 +59,7 @@ def main(page: ft.Page):
     def refrescar_tabla():
         tabla.rows.clear()
         for t in ordenes:
-            costo = float(t.get("costo_repuesto", 0))  # Fix ValueError
+            costo = float(t.get("costo_repuesto", 0))
             total = float(t["total"])
             tabla.rows.append(
                 ft.DataRow(cells=[
@@ -103,7 +102,6 @@ def main(page: ft.Page):
         ordenes.append(orden)
         guardar_datos()
         
-        # Limpiar campos
         for campo in [txt_cliente, txt_equipo, txt_falla, txt_trabajo, txt_repuesto, txt_costo, txt_total]:
             campo.value = ""
         
@@ -143,7 +141,7 @@ def main(page: ft.Page):
     def save_file_result(e: ft.FilePickerResultEvent):
         if e.path:
             generar_pdf(e.path)
-            page.snack_bar = ft.SnackBar(ft.Text(f"PDF guardado correctamente"))
+            page.snack_bar = ft.SnackBar(ft.Text("PDF guardado correctamente"))
             page.snack_bar.open = True
             page.update()
 
@@ -161,7 +159,7 @@ def main(page: ft.Page):
             file_type=ft.FilePickerFileType.PDF
         )
 
-    # Layout principal
+    # Layout principal - Fix: icon como string
     page.add(
         ft.Column([
             ft.Text("Sistema Control Taller", size=24, weight=ft.FontWeight.BOLD),
@@ -182,7 +180,7 @@ def main(page: ft.Page):
     
     refrescar_tabla()
 
-# Fix para Railway: usar puerto de variable de entorno y host 0.0.0.0
+# Para Railway
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8501))
     ft.app(target=main, view=ft.WEB_BROWSER, port=port, host="0.0.0.0")
