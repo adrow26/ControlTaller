@@ -241,10 +241,10 @@ def mostrar_app(page):
         ft.Column([
             ft.Text("Control Taller", size=35, weight="bold"),
             ft.Text("¿Qué hacemos hoy?", size=16, color="grey"),
-            ft.ElevatedButton("Mecánicos", width=300, icon=ft.icons.BUILD, on_click=lambda e: mostrar_mecanicos(page)),
-            ft.ElevatedButton("Órdenes de Trabajo", width=300, icon=ft.icons.DESCRIPTION, on_click=lambda e: mostrar_trabajos(page)),
-            ft.ElevatedButton("Reportes", width=300, icon=ft.icons.ANALYTICS, on_click=lambda e: mostrar_reportes(page)),
-            ft.ElevatedButton("Cerrar sesión", icon=ft.icons.LOGOUT, color="red", width=300, on_click=lambda e: mostrar_login(page)),
+            ft.ElevatedButton("Mecánicos", width=300, icon="build", on_click=lambda e: mostrar_mecanicos(page)),
+            ft.ElevatedButton("Órdenes de Trabajo", width=300, icon="description", on_click=lambda e: mostrar_trabajos(page)),
+            ft.ElevatedButton("Reportes", width=300, icon="analytics", on_click=lambda e: mostrar_reportes(page)),
+            ft.ElevatedButton("Cerrar sesión", icon="logout", color="red", width=300, on_click=lambda e: mostrar_login(page)),
         ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)
     )
 
@@ -286,7 +286,7 @@ def mostrar_mecanicos(page):
         nombre_input,
         telefono_input,
         especialidad_input,
-        ft.ElevatedButton("Guardar Mecánico", icon=ft.icons.SAVE, on_click=guardar_mecanico),
+        ft.ElevatedButton("Guardar Mecánico", icon="save", on_click=guardar_mecanico),
         ft.Divider(),
         ft.Text("Mecánicos registrados", size=20),
         ft.Container(tabla, expand=True),
@@ -318,7 +318,7 @@ def cargar_tabla_trabajos():
         ft.DataColumn(ft.Text("Mecánico")),
         ft.DataColumn(ft.Text("Orden")),
         ft.DataColumn(ft.Text("Repuestos")),
-        ft.DataColumn(ft.Text("Costo Rep")),
+        ft.DataCell(ft.Text("Costo Rep")),
         ft.DataColumn(ft.Text("Costo Trab")),
         ft.DataColumn(ft.Text("Total")),
         ft.DataColumn(ft.Text("Estado"))
@@ -389,7 +389,7 @@ def mostrar_trabajos(page):
         repuestos_input,
         ft.Row([costo_rep_input, costo_trab_input], alignment=ft.MainAxisAlignment.CENTER),
         total_text,
-        ft.ElevatedButton("Guardar Orden", icon=ft.icons.SAVE, on_click=guardar_trabajo),
+        ft.ElevatedButton("Guardar Orden", icon="save", on_click=guardar_trabajo),
         ft.Divider(),
         ft.Text("Historial de Órdenes", size=20),
         ft.Container(tabla, expand=True),
@@ -479,7 +479,7 @@ def mostrar_reportes(page):
         ], alignment=ft.MainAxisAlignment.CENTER, spacing=10),
         fecha_label,
         total_general_text,
-        ft.ElevatedButton("📄 Exportar PDF", icon=ft.icons.DOWNLOAD, color="blue", on_click=exportar_pdf),
+        ft.ElevatedButton("📄 Exportar PDF", icon="download", color="blue", on_click=exportar_pdf),
         ft.Divider(),
         ft.Container(tabla_reporte, expand=True),
     ], spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
