@@ -468,7 +468,7 @@ def mostrar_reportes(page):
             fecha_texto_actual = "Todos"
 
         query = f'''
-            SELECT t.fecha, t.orden_trabajo, t.repuestos_cambiados, m.nombre, t.costo trabajo
+            SELECT t.fecha, t.orden_trabajo, t.repuestos_cambiados, m.nombre, t.costo_trabajo
             FROM trabajos t
             LEFT JOIN mecanicos m ON t.mecanico_id = m.id
             WHERE t.fecha {filtro}
