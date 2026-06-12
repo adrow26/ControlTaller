@@ -494,7 +494,7 @@ def mostrar_reportes(page):
         tabla_reporte.rows = rows
 
         # Ganancia = suma de todos los trabajos del filtro
-        total_general = sum([float(d[4] or 0 for d in datos_actuales]) # <- suma solo mano de obra
+        total_general = sum([float(d[4] or 0) for d in datos_actuales]) # <- suma solo mano de obra
         fecha_label.value = f"Período: {fecha_texto_actual}"
         total_general_text.value = f"Ganancia Mano de Obra: Bs {total_general:.2f}"
         page.update()
