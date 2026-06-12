@@ -318,7 +318,7 @@ def cargar_tabla_trabajos():
         ft.DataColumn(ft.Text("Mecánico")),
         ft.DataColumn(ft.Text("Orden")),
         ft.DataColumn(ft.Text("Repuestos")),
-        ft.DataCell(ft.Text("Costo Rep")),
+        ft.DataColumn(ft.Text("Costo Rep")),
         ft.DataColumn(ft.Text("Costo Trab")),
         ft.DataColumn(ft.Text("Total")),
         ft.DataColumn(ft.Text("Estado"))
