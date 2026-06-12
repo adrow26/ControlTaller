@@ -172,7 +172,7 @@ def main(page: ft.Page):
             ft.Row([txt_repuesto, txt_costo, txt_total]),
             ft.Row([
                 ft.ElevatedButton("Guardar Orden", on_click=agregar_orden),
-                ft.ElevatedButton("Exportar PDF", on_click=exportar_pdf, icon=ft.icons.PICTURE_AS_PDF)
+                ft.ElevatedButton("Exportar PDF", on_click=exportar_pdf, icon="picture_as_pdf")
             ]),
             ft.Divider(),
             ft.Text("Órdenes registradas:", weight=ft.FontWeight.BOLD),
