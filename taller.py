@@ -437,8 +437,8 @@ def mostrar_reportes(page):
         print(f"Ruta seleccionada: {e.path}")
         if e.path and datos_actuales: 
             try:
-            generar_pdf_reporte(datos_actuales, tipo_actual, mecanico_nombre_actual, fecha_texto_actual, e.path)
-            mostrar_aviso(page, f"PDF guardado en {e.path}")
+                generar_pdf_reporte(datos_actuales, tipo_actual, mecanico_nombre_actual, fecha_texto_actual, e.path)
+                mostrar_aviso(page, f"PDF guardado en {e.path}")
             except Exception as ex: mostrar_aviso(page, f"Error al guardar: {ex}")
         else:
             mostrar_aviso(page, "Guardado cancelado")
