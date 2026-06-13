@@ -434,9 +434,14 @@ def mostrar_reportes(page):
     ], rows=[])
 
     def on_file_save_result(e: ft.FilePickerResultEvent):
-        if e.path and datos_actuales:
+        print(f"Ruta seleccionada: {e.path}")
+        if e.path and datos_actuales: 
+            try:
             generar_pdf_reporte(datos_actuales, tipo_actual, mecanico_nombre_actual, fecha_texto_actual, e.path)
             mostrar_aviso(page, f"PDF guardado en {e.path}")
+            except Exception as ex: mostrar_aviso(page, f"Error al guardar: {ex}")
+        else:
+            mostrar_aviso(page, "Guardado cancelado")
 
     def cargar_reporte(tipo):
         nonlocal datos_actuales, tipo_actual, mecanico_nombre_actual, fecha_texto_actual
@@ -502,7 +507,8 @@ def mostrar_reportes(page):
             return
         nombre = f"reporte_{tipo_actual}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
         file_picker_global.on_result = on_file_save_result
-        file_picker_global.pick_save_file(file_name=nombre, allowed_extensions=["pdf"])
+        page.update()
+        file_picker_global.pick_save_file(file_name=nombre, file_type=ft.FilePickerFileType.CUSTOM, allowed_extensions=["pdf"])
 
     filtro_mecanico.on_change = lambda e: cargar_reporte(tipo_actual)
 
