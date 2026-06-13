@@ -572,6 +572,8 @@ def mostrar_reportes(page):
     page.update()
 
 def main(page: ft.Page):
+    global page
+    page = page
     page.title = "Control Taller"
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
