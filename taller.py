@@ -1,3 +1,7 @@
+_page = None
+datos_actuales = []
+total_general = 0
+
 import flet as ft
 import sqlite3
 import os
@@ -572,8 +576,8 @@ def mostrar_reportes(page):
     page.update()
 
 def main(page: ft.Page):
-    global page
-    page = page
+    global _page
+    _page = page
     page.title = "Control Taller"
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
@@ -592,8 +596,8 @@ def main(page: ft.Page):
 def guardar_pdf(e: ft.FilePickerResultEvent):
     if e.path:
        generar_pdf(e.path, datos_actuales, total_general)
-       page.snack_bar = ft.SnackBar(ft.Text(f"PDF guardado"))
-       page.snack_bar.open = True
-       page.update()
+       _page.snack_bar = ft.SnackBar(ft.Text(f"PDF guardado"))
+       _page.snack_bar.open = True
+       _page.update()
         
 ft.app(target=main, port=int(os.getenv("PORT", 8080)), host="0.0.0.0", view=None)
