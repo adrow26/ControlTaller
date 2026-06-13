@@ -1,6 +1,4 @@
 _page = None
-datos_actuales = []
-total_general = 0
 
 import flet as ft
 import sqlite3
@@ -427,7 +425,6 @@ def mostrar_reportes(page):
     fecha_label = ft.Text("Período: ", size=14, color="grey")
     total_general_text = ft.Text("Total General: Bs 0.00", size=20, weight="bold", color="green")
 
-    # Tabla ahora muestra detalle de cada trabajo
     tabla_reporte = ft.DataTable(columns=[
         ft.DataColumn(ft.Text("Fecha")),
         ft.DataColumn(ft.Text("Orden")),
@@ -439,9 +436,8 @@ def mostrar_reportes(page):
     def on_file_save_result(e: ft.FilePickerResultEvent):
         if e.path and datos_actuales:
             generar_pdf_reporte(datos_actuales, tipo_actual, mecanico_nombre_actual, fecha_texto_actual, e.path)
-            mostrar_aviso(page, f"PDF guardado ✅")
+            mostrar_aviso(page, f"PDF guardado en {e.path}")
 
-    
     def cargar_reporte(tipo):
         nonlocal datos_actuales, tipo_actual, mecanico_nombre_actual, fecha_texto_actual
         tipo_actual = tipo
@@ -452,7 +448,6 @@ def mostrar_reportes(page):
         else:
             mecanico_nombre_actual = "Todos"
 
-        # Query que trae detalle de cada trabajo
         conn = conectar_db()
         cursor = conn.cursor()
 
@@ -487,18 +482,16 @@ def mostrar_reportes(page):
         datos_actuales = cursor.fetchall()
         conn.close()
 
-        # Mostrar cada trabajo en la tabla
         rows = [ft.DataRow(cells=[
             ft.DataCell(ft.Text(d[0])),
             ft.DataCell(ft.Text(d[1])),
             ft.DataCell(ft.Text(d[2] or "-", max_lines=2)),
             ft.DataCell(ft.Text(d[3] or "Sin asignar")),
-            ft.DataCell(ft.Text(f"Bs {float(d[4] or 0):.2f}", weight="bold", color="blue")) # <-d[4] ahora es costo trabajo
+            ft.DataCell(ft.Text(f"Bs {float(d[4] or 0):.2f}", weight="bold", color="blue"))
         ]) for d in datos_actuales]
         tabla_reporte.rows = rows
 
-        # Ganancia = suma de todos los trabajos del filtro
-        total_general = sum([float(d[4] or 0) for d in datos_actuales]) # <- suma solo mano de obra
+        total_general = sum([float(d[4] or 0) for d in datos_actuales])
         fecha_label.value = f"Período: {fecha_texto_actual}"
         total_general_text.value = f"Ganancia Mano de Obra: Bs {total_general:.2f}"
         page.update()
@@ -508,7 +501,8 @@ def mostrar_reportes(page):
             mostrar_aviso(page, "No hay datos para exportar")
             return
         nombre = f"reporte_{tipo_actual}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
-        file_picker_global.save_file(file_name=nombre, allowed_extensions=["pdf"])
+        file_picker_global.on_result = on_file_save_result
+        file_picker_global.pick_save_file(file_name=nombre, allowed_extensions=["pdf"])
 
     filtro_mecanico.on_change = lambda e: cargar_reporte(tipo_actual)
 
@@ -538,42 +532,6 @@ def mostrar_reportes(page):
 
     cargar_reporte("dia")
     page.update()
-    
-def exportar_pdf(e):
-    if not datos_actuales:
-        mostrar_aviso(page, "No hay datos para exportar")
-        return
-        nombre = f"reporte_{tipo_actual}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
-        file_picker_global.save_file(file_name=nombre, allowed_extensions=["pdf"])
-
-    filtro_mecanico.on_change = lambda e: cargar_reporte(tipo_actual)
-
-    contenido = ft.Column([
-        ft.Text("Reportes de Ganancias", size=24, weight="bold"),
-        ft.Text("Ganancia por mecánico", size=16, color="grey"),
-        filtro_mecanico,
-        ft.Row([
-            ft.ElevatedButton("Hoy", on_click=lambda e: cargar_reporte("dia")),
-            ft.ElevatedButton("Semana", on_click=lambda e: cargar_reporte("semana")),
-            ft.ElevatedButton("Mes", on_click=lambda e: cargar_reporte("mes"))
-        ], alignment=ft.MainAxisAlignment.CENTER, spacing=10),
-        fecha_label,
-        total_general_text,
-        ft.ElevatedButton("📄 Exportar PDF", icon="download", color="blue", on_click=exportar_pdf),
-        ft.Divider(),
-        ft.Container(tabla_reporte, expand=True),
-    ], spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
-
-    page.clean()
-    page.add(
-        ft.Column([
-            ft.Container(contenido, expand=True),
-            ft.ElevatedButton("← Volver al menú", on_click=lambda e: mostrar_app(page), width=300)
-        ], expand=True)
-    )
-
-    cargar_reporte("dia")
-    page.update()
 
 def main(page: ft.Page):
     global _page
@@ -587,17 +545,11 @@ def main(page: ft.Page):
     page.padding = 20
 
     global file_picker_global
-    file_picker_global = ft.FilePicker(on_result=guardar_pdf)
+    file_picker_global = ft.FilePicker(on_result=lambda e: None)
     page.overlay.append(file_picker_global)
+    page.update()
 
     crear_tablas_taller()
     mostrar_login(page)
-    
-def guardar_pdf(e: ft.FilePickerResultEvent):
-    if e.path:
-       generar_pdf(e.path, datos_actuales, total_general)
-       _page.snack_bar = ft.SnackBar(ft.Text(f"PDF guardado"))
-       _page.snack_bar.open = True
-       _page.update()
-        
+
 ft.app(target=main, port=int(os.getenv("PORT", 8080)), host="0.0.0.0", view=None)
