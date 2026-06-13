@@ -539,12 +539,12 @@ def mostrar_reportes(page):
     cargar_reporte("dia")
     page.update()
     
-    def exportar_pdf(e):
-        if not datos_actuales:
-            mostrar_aviso(page, "No hay datos para exportar")
-            return
+def exportar_pdf(e):
+    if not datos_actuales:
+        mostrar_aviso(page, "No hay datos para exportar")
+        return
         nombre = f"reporte_{tipo_actual}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
-        file_picker.save_file(file_name=nombre, allowed_extensions=["pdf"])
+        file_picker_global.save_file(file_name=nombre, allowed_extensions=["pdf"])
 
     filtro_mecanico.on_change = lambda e: cargar_reporte(tipo_actual)
 
